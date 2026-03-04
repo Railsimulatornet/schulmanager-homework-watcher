@@ -1,0 +1,10 @@
+services:
+  schulmanager-homework-watcher:
+    build: .
+    container_name: schulmanager-homework-watcher
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
+    command: ["npm", "run", "start"]
