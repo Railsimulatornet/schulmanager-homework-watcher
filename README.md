@@ -232,7 +232,7 @@ MAIL_TO=empfaenger@example.de
 
 ## Handbuch
 
-Das ausführliche Handbuch kann zusätzlich im Ordner `docs/` abgelegt werden, zum Beispiel:
+Das ausführliche Handbuch findest du im Ordner `docs/`.
 
 ```text
 docs/Schulmanager-Homework-Watcher_Handbuch_DE.pdf
