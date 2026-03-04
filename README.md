@@ -235,5 +235,5 @@ MAIL_TO=empfaenger@example.de
 Das ausführliche Handbuch findest du im Ordner `docs/`.
 
 ```text
-docs/Schulmanager-Homework-Watcher_Handbuch_DE.pdf
+docs/Schulmanager-Homework-Watcher_Handbuch_DE_v1.0.pdf
 ```
