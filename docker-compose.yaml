@@ -1,0 +1,9 @@
+services:
+  schulmanager-homework-watcher:
+    image: railsimulatornet/schulmanager-homework-watcher:latest
+    container_name: schulmanager-homework-watcher
+    restart: unless-stopped
+    env_file:
+      - .env
+    volumes:
+      - ./data:/app/data
