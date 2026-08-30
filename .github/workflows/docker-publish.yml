@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to publish, for example v2.0.1"
+        description: "Version to publish, for example v2.0.3"
         required: true
         type: string
 
@@ -70,10 +70,10 @@ jobs:
         with:
           context: .
           platforms: linux/amd64,linux/arm64
+          pull: true
+          no-cache: true
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-          provenance: false
-          sbom: false
+          provenance: mode=max
+          sbom: true
