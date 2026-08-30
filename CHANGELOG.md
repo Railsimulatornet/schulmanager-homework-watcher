@@ -1,5 +1,27 @@
 # Changelog
 
+## v2.0.3 - 2026-08-30
+
+### Sicherheit
+
+- Playwright von `1.58.2` auf `1.62.1` aktualisiert.
+- Docker-Basis auf `mcr.microsoft.com/playwright:v1.62.1-noble` aktualisiert.
+- Beim Image-Build werden alle verfügbaren Ubuntu-Sicherheitsupdates per `dist-upgrade` eingespielt.
+- Der wöchentliche Trivy-Scan schlägt jetzt bei behebbaren HIGH- oder CRITICAL-Funden mit Fehlerstatus fehl.
+- Trivy prüft explizit OS- und Library-Pakete.
+
+### Build und Veröffentlichung
+
+- `PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1` verhindert unnötige Browser-Downloads während `npm install`, da die Browser bereits im Playwright-Basisimage enthalten sind.
+- Docker-Releases werden mit `pull: true` und `no-cache: true` vollständig frisch gebaut.
+- Docker-Releases enthalten jetzt SBOM und Build-Provenance.
+- `npm` und `npx` werden nach der Installation weiterhin aus dem Runtime-Image entfernt.
+- Versionsnummer auf `2.0.3` erhöht.
+
+### Funktion
+
+- Die eigentliche Funktion des Schulmanager Homework Watchers wurde durch dieses Wartungs- und Sicherheitsupdate nicht verändert.
+
 ## v2.0.2 - 2026-06-26
 
 ### Geändert

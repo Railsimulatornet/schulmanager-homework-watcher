@@ -12,6 +12,7 @@ Docker-Container zur Überwachung sichtbarer Hausaufgaben im Schulmanager mit E-
 - **Testmail-Funktion** zur Prüfung von SMTP, Darstellung und Anhängen
 - automatische Aufbewahrung und Rotation alter Laufzeitdaten
 - fertiges Docker-Hub-Image ohne lokalen Build
+- automatischer Container-Sicherheitscheck mit Trivy für behebbare HIGH- und CRITICAL-Funde
 
 ---
 
@@ -42,15 +43,24 @@ railsimulatornet/schulmanager-homework-watcher:latest
 
 Zusätzlich werden bei Veröffentlichungen Versions- und Datumstags bereitgestellt.
 
+Veröffentlichte Images werden vollständig frisch gebaut und enthalten SBOM sowie Build-Provenance.
+
 ---
 
 ## Projektstruktur
 
 ```text
 schulmanager-homework-watcher/
-├─ .github/workflows/docker-publish.yml
+├─ .github/
+│  ├─ workflows/
+│  │  ├─ docker-publish.yml
+│  │  ├─ github-release.yml
+│  │  └─ security-scan.yml
+│  ├─ release-notes.md
+│  └─ release-title.txt
 ├─ .dockerignore
 ├─ .gitignore
+├─ CHANGELOG.md
 ├─ docker-compose.yaml
 ├─ Dockerfile
 ├─ package.json
