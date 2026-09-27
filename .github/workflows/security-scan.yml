@@ -21,69 +21,6 @@ jobs:
       - name: Build image
         run: docker build --pull --no-cache --tag schulmanager-homework-watcher:ci .
 
-      - name: Dependency compatibility smoke test
-        shell: bash
-        run: |
-          set -euo pipefail
-
-          docker run --rm             --entrypoint /bin/sh             schulmanager-homework-watcher:ci             -ec '
-              echo "=== Runtime versions ==="
-              node --version
-              node -e "console.log(\"dotenv=\" + require(\"dotenv/package.json\").version)"
-              node -e "console.log(\"nodemailer=\" + require(\"nodemailer/package.json\").version)"
-
-              echo
-              echo "=== JavaScript syntax ==="
-              find /app/src -type f -name "*.js" -print -exec node --check {} \;
-
-              echo
-              echo "=== dotenv config/parse API ==="
-              node - <<'"'"'NODE'"'"'
-              const dotenv = require("dotenv");
-              const parsed = dotenv.parse(Buffer.from("A=1\nB=two\n"));
-              if (parsed.A !== "1" || parsed.B !== "two") {
-                throw new Error("dotenv.parse compatibility test failed");
-              }
-              process.env.MAIL_ENABLED = "false";
-              const { config } = require("/app/src/lib/config");
-              if (!config || !config.mail || config.mail.enabled !== false) {
-                throw new Error("application config load failed");
-              }
-              console.log("dotenv compatibility: OK");
-              NODE
-
-              echo
-              echo "=== Nodemailer API/message generation ==="
-              node - <<'"'"'NODE'"'"'
-              const nodemailer = require("nodemailer");
-              if (typeof nodemailer.createTransport !== "function") {
-                throw new Error("nodemailer.createTransport missing");
-              }
-
-              const transport = nodemailer.createTransport({
-                streamTransport: true,
-                buffer: true,
-                newline: "unix"
-              });
-
-              transport.sendMail({
-                from: "sender@example.invalid",
-                to: "receiver@example.invalid",
-                subject: "Dependency smoke test",
-                text: "OK"
-              }).then((info) => {
-                const message = String(info.message);
-                if (!message.includes("Subject: Dependency smoke test")) {
-                  throw new Error("generated message missing subject");
-                }
-                console.log("nodemailer compatibility: OK");
-              }).catch((error) => {
-                console.error(error);
-                process.exit(1);
-              });
-              NODE
-            '
-
       - name: Scan image with Trivy
         run: |
           set -euo pipefail
@@ -120,14 +57,33 @@ jobs:
             --output /out/trivy.txt \
             schulmanager-homework-watcher:ci
 
+      - name: Dependency compatibility smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=== JavaScript syntax ==="
+          docker run --rm \
+            --entrypoint /bin/sh \
+            schulmanager-homework-watcher:ci \
+            -ec 'find /app/src -type f -name "*.js" -print -exec node --check {} \;'
+
+          echo
+          echo "=== Dependency/API compatibility ==="
+          docker run --rm \
+            -v "$PWD/.github/scripts/dependency-smoke-test.js:/app/.dependency-smoke-test.js:ro" \
+            --entrypoint node \
+            schulmanager-homework-watcher:ci \
+            /app/.dependency-smoke-test.js
+
       - name: Upload Trivy SARIF to GitHub Security
-        if: always()
+        if: always() && hashFiles('trivy-results/trivy.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4.38.2
         with:
           sarif_file: trivy-results/trivy.sarif
 
       - name: Upload Trivy report
-        if: always()
+        if: always() && hashFiles('trivy-results/**') != ''
         uses: actions/upload-artifact@v7
         with:
           name: trivy-results
