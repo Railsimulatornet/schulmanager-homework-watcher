@@ -2,12 +2,13 @@
 
 ## v2.0.4 - 2026-09-27
 
-### Sicherheit
+### Sicherheit und Wartung
 
 - Nodemailer von `^9.0.1` auf `^9.1.0` angehoben.
-- Das Image wird weiterhin vollständig frisch aus dem aktuellen Playwright-Noble-Basisimage gebaut.
-- Verfügbare Ubuntu-Sicherheitsupdates werden ausschließlich innerhalb des Docker-Builds installiert.
-- Der Trivy-Security-Gate blockiert weiterhin behebbaren HIGH- oder CRITICAL-Funde.
+- Das Image wird weiterhin frisch auf Basis von Playwright 1.62.1 / Ubuntu Noble gebaut.
+- Verfügbare Ubuntu-Sicherheitsupdates werden beim Docker-Build automatisch eingespielt.
+- Trivy blockiert weiterhin eine Veröffentlichung bei behebbaren HIGH- oder CRITICAL-Funden.
+- Der bewegliche Docker-Tag `latest` wird künftig einmal pro Woche frisch gebaut und geprüft; feste Versions-Tags bleiben unverändert.
 
 ### Funktion
 
