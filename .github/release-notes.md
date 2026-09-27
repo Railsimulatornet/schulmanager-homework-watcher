@@ -1,45 +1,45 @@
-### Schulmanager Homework Watcher v2.0.3
+### Schulmanager Homework Watcher v2.0.4
 
-## Änderungen
+## Was ist neu?
 
-• Playwright von `1.58.2` auf `1.62.1` aktualisiert
-• Docker-Basis auf `mcr.microsoft.com/playwright:v1.62.1-noble` aktualisiert
-• Verfügbare Ubuntu-Sicherheitsupdates werden bei jedem sauberen Image-Build eingespielt
-• Trivy prüft jetzt OS- und Library-Pakete und stoppt bei behebbaren HIGH- oder CRITICAL-Funden
-• Docker-Releases werden vollständig frisch mit `pull: true` und `no-cache: true` gebaut
-• SBOM und Build-Provenance für veröffentlichte Docker-Images aktiviert
-• Unnötige Playwright-Browser-Downloads während `npm install` werden verhindert
+Dieses Update kümmert sich hauptsächlich um die Sicherheit des Mailversands und des Docker-Images.
 
-Die eigentliche Funktion des Schulmanager Homework Watchers wurde durch dieses Wartungs- und Sicherheitsupdate nicht verändert.
+• Nodemailer wurde auf die aktuelle 9.1-Version angehoben.  
+• Das Docker-Image wird weiterhin komplett frisch auf Basis von Playwright 1.62.1 / Ubuntu Noble gebaut.  
+• Verfügbare Ubuntu-Sicherheitsupdates werden beim Image-Build automatisch mitgenommen.  
+• Vor einer Veröffentlichung prüft Trivy weiterhin auf behebbare HIGH- und CRITICAL-Sicherheitslücken.  
+• Das `latest`-Image wird künftig zusätzlich einmal pro Woche frisch gebaut und geprüft. Die festen Versions-Tags bleiben unverändert.
+
+An der eigentlichen Funktion des Schulmanager Homework Watchers ändert sich mit diesem Release nichts.
 
 ## Docker-Image
 
-Das veröffentlichte Docker-Image unterstützt:
+Das Image unterstützt weiterhin:
 
-• `linux/amd64`
+• `linux/amd64`  
 • `linux/arm64`
 
 Docker-Image:
 
 `railsimulatornet/schulmanager-homework-watcher:latest`
 
-Verfügbare Versions-Tags:
+Verfügbare Release-Tags:
 
-• `2.0.3`
-• `2.0`
-• `latest`
+• `2.0.4`  
+• `2.0`  
+• `latest`  
 • Datumstag der Veröffentlichung
 
-## Aktualisierung über Docker Compose
+## Aktualisierung
+
+Im Projektordner:
 
 ```bash
-cd /volume2/docker/schulmanager-homework-watcher
 docker compose pull
 docker compose up -d --force-recreate
-docker image prune -f
 ```
 
-In der UGOS-Docker-App kann das Projekt alternativ über „Neu bereitstellen“ aktualisiert werden. Dabei muss „Das neuste Image abrufen“ aktiviert sein.
+In der UGOS-Docker-App kann das Projekt alternativ über **Neu bereitstellen** aktualisiert werden. Dabei muss **Das neuste Image abrufen** aktiviert sein.
 
 ## Hinweis
 

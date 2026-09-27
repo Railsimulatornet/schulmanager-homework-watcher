@@ -43,7 +43,7 @@ railsimulatornet/schulmanager-homework-watcher:latest
 
 Zusätzlich werden bei Veröffentlichungen Versions- und Datumstags bereitgestellt.
 
-Veröffentlichte Images werden vollständig frisch gebaut und enthalten SBOM sowie Build-Provenance.
+Veröffentlichte Images werden vollständig frisch gebaut und enthalten SBOM sowie Build-Provenance. Der bewegliche Tag `latest` wird außerdem einmal pro Woche frisch gebaut, mit Trivy geprüft und nur bei bestandenem Security-Gate aktualisiert. Feste Versions-Tags werden dadurch nicht verändert.
 
 ---
 
