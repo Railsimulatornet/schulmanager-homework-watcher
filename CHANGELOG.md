@@ -1,5 +1,18 @@
 # Changelog
 
+## v2.0.4 - 2026-09-27
+
+### Sicherheit
+
+- Nodemailer von `^9.0.1` auf `^9.1.0` angehoben.
+- Das Image wird weiterhin vollständig frisch aus dem aktuellen Playwright-Noble-Basisimage gebaut.
+- Verfügbare Ubuntu-Sicherheitsupdates werden ausschließlich innerhalb des Docker-Builds installiert.
+- Der Trivy-Security-Gate blockiert weiterhin behebbaren HIGH- oder CRITICAL-Funde.
+
+### Funktion
+
+- Keine funktionalen Änderungen am Schulmanager Homework Watcher.
+
 ## v2.0.3 - 2026-08-30
 
 ### Sicherheit
