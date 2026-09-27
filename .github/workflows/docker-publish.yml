@@ -1,9 +1,6 @@
-name: Build and publish Docker image
+name: Manual Docker image recovery publish
 
 on:
-  push:
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
     inputs:
       version:
@@ -25,6 +22,30 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v7
 
+      - name: Build recovery candidate
+        run: |
+          docker build \
+            --pull \
+            --no-cache \
+            --tag schulmanager-homework-watcher:recovery-candidate \
+            .
+
+      - name: Security gate with Trivy
+        run: |
+          set -euo pipefail
+          docker run --rm \
+            -v /var/run/docker.sock:/var/run/docker.sock \
+            -v "${HOME}/.cache/trivy:/root/.cache/trivy" \
+            ghcr.io/aquasecurity/trivy:latest \
+            image \
+            --image-src docker \
+            --scanners vuln \
+            --pkg-types os,library \
+            --ignore-unfixed \
+            --severity HIGH,CRITICAL \
+            --exit-code 1 \
+            schulmanager-homework-watcher:recovery-candidate
+
       - name: Log in to Docker Hub
         uses: docker/login-action@v4
         with:
@@ -42,11 +63,7 @@ jobs:
       - name: Set build variables
         shell: bash
         run: |
-          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
-            VERSION="${{ inputs.version }}"
-          else
-            VERSION="${GITHUB_REF_NAME}"
-          fi
+          VERSION="${{ inputs.version }}"
 
           echo "VERSION=${VERSION}" >> "$GITHUB_ENV"
           echo "DATE_TAG=$(date -u +'%d%m%Y')" >> "$GITHUB_ENV"
