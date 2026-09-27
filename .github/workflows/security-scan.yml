@@ -57,14 +57,33 @@ jobs:
             --output /out/trivy.txt \
             schulmanager-homework-watcher:ci
 
+      - name: Dependency compatibility smoke test
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          echo "=== JavaScript syntax ==="
+          docker run --rm \
+            --entrypoint /bin/sh \
+            schulmanager-homework-watcher:ci \
+            -ec 'find /app/src -type f -name "*.js" -print -exec node --check {} \;'
+
+          echo
+          echo "=== Dependency/API compatibility ==="
+          docker run --rm \
+            -v "$PWD/.github/scripts/dependency-smoke-test.js:/app/.dependency-smoke-test.js:ro" \
+            --entrypoint node \
+            schulmanager-homework-watcher:ci \
+            /app/.dependency-smoke-test.js
+
       - name: Upload Trivy SARIF to GitHub Security
-        if: always()
+        if: always() && hashFiles('trivy-results/trivy.sarif') != ''
         uses: github/codeql-action/upload-sarif@v4.38.2
         with:
           sarif_file: trivy-results/trivy.sarif
 
       - name: Upload Trivy report
-        if: always()
+        if: always() && hashFiles('trivy-results/**') != ''
         uses: actions/upload-artifact@v7
         with:
           name: trivy-results
