@@ -1,6 +1,6 @@
 {
   "name": "schulmanager-homework-watcher",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "Schulmanager-Abruf für Hausaufgaben mit First-Seen-Nachweis und Mailversand",
   "main": "src/scheduler.js",
   "scripts": {
@@ -9,10 +9,10 @@
     "login": "node src/login.js"
   },
   "dependencies": {
-    "dotenv": "^18.0.3",
-    "luxon": "^3.5.0",
-    "node-cron": "^4.2.1",
-    "nodemailer": "^10.0.10",
+    "dotenv": "18.0.4",
+    "luxon": "3.7.2",
+    "node-cron": "4.6.0",
+    "nodemailer": "10.0.11",
     "playwright": "1.62.1"
   }
 }
