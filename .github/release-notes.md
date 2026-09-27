@@ -1,42 +1,45 @@
 ### Schulmanager Homework Watcher v2.0.4
 
-## Änderungen
+## Was ist neu?
 
-• Nodemailer von `^9.0.1` auf `^9.1.0` angehoben
-• Das Docker-Image wird vollständig frisch mit aktuellem Playwright-Noble-Basisimage gebaut
-• Verfügbare Ubuntu-Sicherheitsupdates werden weiterhin ausschließlich innerhalb des Docker-Builds eingespielt
-• Der bestehende Trivy-Security-Gate blockiert die Veröffentlichung bei behebbaren HIGH- oder CRITICAL-Funden
-• SBOM und Build-Provenance bleiben aktiviert
+Dieses Update kümmert sich hauptsächlich um die Sicherheit des Mailversands und des Docker-Images.
 
-Die eigentliche Funktion des Schulmanager Homework Watchers wurde nicht verändert.
+• Nodemailer wurde auf die aktuelle 9.1-Version angehoben.  
+• Das Docker-Image wird weiterhin komplett frisch auf Basis von Playwright 1.62.1 / Ubuntu Noble gebaut.  
+• Verfügbare Ubuntu-Sicherheitsupdates werden beim Image-Build automatisch mitgenommen.  
+• Vor einer Veröffentlichung prüft Trivy weiterhin auf behebbare HIGH- und CRITICAL-Sicherheitslücken.  
+• Das `latest`-Image wird künftig zusätzlich einmal pro Woche frisch gebaut und geprüft. Die festen Versions-Tags bleiben unverändert.
+
+An der eigentlichen Funktion des Schulmanager Homework Watchers ändert sich mit diesem Release nichts.
 
 ## Docker-Image
 
-Das veröffentlichte Docker-Image unterstützt:
+Das Image unterstützt weiterhin:
 
-• `linux/amd64`
+• `linux/amd64`  
 • `linux/arm64`
 
 Docker-Image:
 
 `railsimulatornet/schulmanager-homework-watcher:latest`
 
-Verfügbare Versions-Tags:
+Verfügbare Release-Tags:
 
-• `2.0.4`
-• `2.0`
-• `latest`
+• `2.0.4`  
+• `2.0`  
+• `latest`  
 • Datumstag der Veröffentlichung
 
-## Aktualisierung über Docker Compose
+## Aktualisierung
+
+Im Projektordner:
 
 ```bash
-cd /volume2/docker/schulmanager-homework-watcher
 docker compose pull
 docker compose up -d --force-recreate
 ```
 
-In der UGOS-Docker-App kann das Projekt alternativ über „Neu bereitstellen“ aktualisiert werden. Dabei muss „Das neuste Image abrufen“ aktiviert sein.
+In der UGOS-Docker-App kann das Projekt alternativ über **Neu bereitstellen** aktualisiert werden. Dabei muss **Das neuste Image abrufen** aktiviert sein.
 
 ## Hinweis
 
