@@ -1,16 +1,14 @@
-### Schulmanager Homework Watcher v2.0.3
+### Schulmanager Homework Watcher v2.0.4
 
 ## Änderungen
 
-• Playwright von `1.58.2` auf `1.62.1` aktualisiert
-• Docker-Basis auf `mcr.microsoft.com/playwright:v1.62.1-noble` aktualisiert
-• Verfügbare Ubuntu-Sicherheitsupdates werden bei jedem sauberen Image-Build eingespielt
-• Trivy prüft jetzt OS- und Library-Pakete und stoppt bei behebbaren HIGH- oder CRITICAL-Funden
-• Docker-Releases werden vollständig frisch mit `pull: true` und `no-cache: true` gebaut
-• SBOM und Build-Provenance für veröffentlichte Docker-Images aktiviert
-• Unnötige Playwright-Browser-Downloads während `npm install` werden verhindert
+• Nodemailer von `^9.0.1` auf `^9.1.0` angehoben
+• Das Docker-Image wird vollständig frisch mit aktuellem Playwright-Noble-Basisimage gebaut
+• Verfügbare Ubuntu-Sicherheitsupdates werden weiterhin ausschließlich innerhalb des Docker-Builds eingespielt
+• Der bestehende Trivy-Security-Gate blockiert die Veröffentlichung bei behebbaren HIGH- oder CRITICAL-Funden
+• SBOM und Build-Provenance bleiben aktiviert
 
-Die eigentliche Funktion des Schulmanager Homework Watchers wurde durch dieses Wartungs- und Sicherheitsupdate nicht verändert.
+Die eigentliche Funktion des Schulmanager Homework Watchers wurde nicht verändert.
 
 ## Docker-Image
 
@@ -25,7 +23,7 @@ Docker-Image:
 
 Verfügbare Versions-Tags:
 
-• `2.0.3`
+• `2.0.4`
 • `2.0`
 • `latest`
 • Datumstag der Veröffentlichung
@@ -36,7 +34,6 @@ Verfügbare Versions-Tags:
 cd /volume2/docker/schulmanager-homework-watcher
 docker compose pull
 docker compose up -d --force-recreate
-docker image prune -f
 ```
 
 In der UGOS-Docker-App kann das Projekt alternativ über „Neu bereitstellen“ aktualisiert werden. Dabei muss „Das neuste Image abrufen“ aktiviert sein.
