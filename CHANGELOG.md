@@ -1,5 +1,20 @@
 # Changelog
 
+## v2.0.5 - 2026-09-27
+
+### Sicherheit und Wartung
+
+- Nodemailer auf `10.0.11` aktualisiert.
+- dotenv auf `18.0.4` aktualisiert.
+- Luxon `3.7.2`, node-cron `4.6.0` und Playwright `1.62.1` auf die getesteten Versionen festgesetzt.
+- Der Security-Workflow enthält jetzt einen zusätzlichen Kompatibilitäts-Smoke-Test für JavaScript-Syntax, dotenv und Nodemailer.
+- Das frisch gebaute Testimage hatte keine behebbaren HIGH- oder CRITICAL-Funde in Trivy.
+- Ein realer Testmail-Versand mit Nodemailer 10 und dotenv 18 war erfolgreich.
+
+### Funktion
+
+- Keine funktionalen Änderungen am Schulmanager Homework Watcher.
+
 ## v2.0.4 - 2026-09-27
 
 ### Sicherheit und Wartung
