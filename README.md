@@ -1,5 +1,9 @@
 # Schulmanager Homework Watcher
 
+[![Release + Docker Image](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/github-release.yml/badge.svg)](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/github-release.yml)
+[![Security Scan](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/security-scan.yml/badge.svg)](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/security-scan.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Docker-Container zur Überwachung sichtbarer Hausaufgaben im Schulmanager mit E-Mail-Benachrichtigung.
 
 ## Funktionen
