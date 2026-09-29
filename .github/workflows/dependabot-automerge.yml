@@ -85,10 +85,8 @@ jobs:
 
           mapfile -t LABELS < <(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" --jq '.[].name')
           ecosystem=""
-          printf '%s
-' "${LABELS[@]}" | grep -Fxq 'automerge:patch:npm' && ecosystem="npm"
-          printf '%s
-' "${LABELS[@]}" | grep -Fxq 'automerge:patch:github-actions' && ecosystem="github-actions"
+          printf '%s\n' "${LABELS[@]}" | grep -Fxq 'automerge:patch:npm' && ecosystem="npm"
+          printf '%s\n' "${LABELS[@]}" | grep -Fxq 'automerge:patch:github-actions' && ecosystem="github-actions"
           [[ -n "$ecosystem" ]] || exit 0
 
           mapfile -t FILES < <(gh api --paginate "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER/files?per_page=100" --jq '.[].filename')
