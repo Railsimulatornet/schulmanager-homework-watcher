@@ -6,10 +6,12 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      npm-minor-patch:
+      npm-patch:
+        update-types:
+          - patch
+      npm-minor:
         update-types:
           - minor
-          - patch
     ignore:
       - dependency-name: playwright
 
@@ -19,7 +21,9 @@ updates:
       interval: weekly
     open-pull-requests-limit: 5
     groups:
-      github-actions-minor-patch:
+      actions-patch:
+        update-types:
+          - patch
+      actions-minor:
         update-types:
           - minor
-          - patch
