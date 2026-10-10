@@ -9,10 +9,10 @@
     "login": "node src/login.js"
   },
   "dependencies": {
-    "dotenv": "18.0.4",
+    "dotenv": "18.0.6",
     "luxon": "3.7.2",
     "node-cron": "4.6.0",
-    "nodemailer": "10.0.13",
+    "nodemailer": "10.0.15",
     "playwright": "1.62.1"
   }
 }
