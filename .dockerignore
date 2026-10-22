@@ -9,5 +9,6 @@ npm-debug.log*
 data
 secrets
 docs
+test
 README.md
 docker-compose*.yaml

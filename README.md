@@ -5,410 +5,179 @@
 [![CodeQL](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/codeql.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-[Deutsch](#deutsch) · [English](#english)
+Version **3.0.1** · [Deutsch](#deutsch) · [English](#english)
 
 ## Deutsch
 
-Der Schulmanager Homework Watcher prüft regelmäßig die Hausaufgaben, die mit deinem eigenen Schulmanager-Zugang sichtbar sind. Er vergleicht die Abrufe, dokumentiert Änderungen und kann dich per E-Mail benachrichtigen.
+Dies ist eine Community-Lösung und kein offizielles Produkt von Schulmanager oder UGREEN. Die Nutzung erfolgt mit dem eigenen Eltern- oder Schülerkonto.
 
-Dies ist eine Community-Lösung und kein offizielles Produkt von Schulmanager oder UGREEN. Die Nutzung erfolgt auf eigene Verantwortung.
+Version **3.0.1** enthält die lokal getestete modulare Erweiterung sowie die Sicherheitskorrekturen von 2.0.6.
+Überwacht die im eigenen Schulmanager-Konto sichtbaren Daten, dokumentiert Änderungen und versendet getrennte deutsche HTML-/Text-Mails mit Nachweisen.
 
-### Funktionen
+## Bereiche und Mailsteuerung
 
-- Neue und entfernte Einträge im überwachten Zeitraum erkennen
-- Den Zeitpunkt „erstmals erkannt“ festhalten
-- HTML- und Text-E-Mails mit Berichten und Anhängen versenden
-- SMTP, Darstellung und Anhänge mit einer Testmail prüfen
-- Abrufe nach Zeitplan oder manuell starten
-- Snapshots, Mail-Vorschauen und Berichte lokal aufbewahren und alte Dateien rotieren
-- Vorgebautes Docker-Image für `linux/amd64` und `linux/arm64`
+Alle Einstellungen stehen in `.env`. Die vorhandenen Zugangsdaten und SMTP-Einstellungen bleiben dort.
 
-### Voraussetzungen
+| Bereich | Erfassen | Änderungsmail | Vorgabe |
+|---|---|---|---|
+| Hausaufgaben | `WATCH_HOMEWORK` | `MAIL_HOMEWORK` | beide `true` |
+| Fehlzeiten mit Status | `WATCH_ABSENCES` | `MAIL_ABSENCES` | beide `true` |
+| Einträge | `WATCH_ENTRIES` | `MAIL_ENTRIES` | beide `true` |
+| Stundengenaue Historie | `WATCH_HISTORY` | `MAIL_HISTORY` | erfassen `true`, Mail `false` |
+| Klassenarbeiten | `WATCH_EXAMS` | `MAIL_EXAMS` | beide `true` |
+| Stundenplanänderungen | `WATCH_TIMETABLE` | `MAIL_TIMETABLE` | beide `true` |
 
-- UGREEN NAS mit UGOS Pro und Docker-App oder ein Linux-Host mit Docker Compose
-- AMD64- oder ARM64-Prozessor
-- Dein eigener Eltern- oder Schülerzugang zu Schulmanager
-- Internetzugang zu Schulmanager und optional ein erreichbarer SMTP-Server
-- Ein dauerhaft beschreibbarer Projektordner für `data/`
+`WATCH_*=false` pausiert den Abruf. `MAIL_*=false` behält Erfassung und Nachweise bei, unterdrückt aber den Versand des Bereichs. `MAIL_ENABLED=false` schaltet den gesamten Versand aus. Nach einer Änderung der `.env` den Container über das bestehende Compose-Projekt neu erstellen; ein einfacher Neustart übernimmt die geänderten Umgebungswerte nicht.
 
-Die vorhandenen Mail- und Protokolltexte der Anwendung sind auf Deutsch. Diese README beschreibt die Einrichtung vollständig auf Deutsch und Englisch.
+`MAIL_MODE=changes` bleibt die empfohlene Einstellung. Hausaufgaben unterstützen weiterhin den bisherigen Modus `always`. Neue Module senden ausschließlich echte Änderungen. Die separate Historienmail ist standardmäßig aus, weil sich ihre Meldungen mit Fehlzeiten überschneiden können. Der erste erfolgreiche Abruf jedes neuen Moduls setzt einen Ausgangsstand ohne Änderungsmail.
 
-### Schnellstart
+## Zeitplan und Belastung
 
-1. Lade das Paket unter [Releases](https://github.com/Railsimulatornet/schulmanager-homework-watcher/releases/latest) herunter oder verwende den Repository-Inhalt.
-2. Kopiere den Projektordner auf deinen Host, zum Beispiel nach `/volume2/docker/schulmanager-homework-watcher`.
-3. Lege die Konfiguration an. Eine vorhandene `.env` bleibt erhalten:
-
-```bash
-cd /volume2/docker/schulmanager-homework-watcher
-test -f .env || cp .env.example .env
-```
-
-4. Trage deine Schulmanager- und SMTP-Daten in `.env` ein und passe Zeitplan sowie Überwachungsfenster an.
-5. Lade und starte den Container aus dem gleichen Ordner:
-
-```bash
-docker compose pull
-docker compose up -d
-docker compose ps
-```
-
-In UGOS kannst du unter **Docker → Projekt → Erstellen** den vorhandenen Projektordner auswählen, die `docker-compose.yaml` importieren und das Projekt bereitstellen. Für den normalen Betrieb wird das veröffentlichte Image verwendet.
-
-### Konfiguration
-
-Die vollständige Vorlage liegt in [.env.example](.env.example). Diese Beispielwerte entsprechen dem mitgelieferten Überwachungsfenster und Zeitplan:
-
-```env
+```dotenv
 TZ=Europe/Berlin
-SCHULMANAGER_BASE_URL=https://login.schulmanager-online.de
-SCHULMANAGER_USERNAME=deine-mailadresse@example.de
-SCHULMANAGER_PASSWORD=DEIN_PASSWORT
-
-ONLY_CURRENT_WEEK=false
-HOMEWORK_LOOKBACK_DAYS=10
-HOMEWORK_LOOKAHEAD_DAYS=7
-CRON_SCHEDULE=0,30 6-21 * * *
+CRON_SCHEDULE=*/5 6-22 * * *
 RUN_ON_START=true
 RETENTION_DAYS=31
-
-MAIL_ENABLED=true
-MAIL_MODE=changes
-MAIL_ON_ERROR=true
-SMTP_HOST=smtp.example.de
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=absender@example.de
-SMTP_PASS=DEIN_SMTP_PASSWORT
-MAIL_FROM=absender@example.de
-MAIL_TO=empfaenger@example.de
+ERROR_MAIL_COOLDOWN_MINUTES=360
 ```
 
-| Einstellung | Bedeutung |
-| --- | --- |
-| `SCHULMANAGER_USERNAME` / `SCHULMANAGER_PASSWORD` | Eigener Schulmanager-Zugang |
-| `ONLY_CURRENT_WEEK` | Mit `true` auf die aktuelle Woche begrenzen |
-| `HOMEWORK_LOOKBACK_DAYS` / `HOMEWORK_LOOKAHEAD_DAYS` | Bei `ONLY_CURRENT_WEEK=false` das rollierende Zeitfenster festlegen |
-| `CRON_SCHEDULE` | Automatischer Abruf im Cron-Format |
-| `TZ` | Zeitzone für Zeitplan, Mails und Protokoll |
-| `RUN_ON_START` | Mit `true` direkt nach dem Containerstart abrufen |
-| `RETENTION_DAYS` | Aufbewahrung alter Laufzeitdateien in Tagen |
-| `MAIL_ENABLED` | Mailversand aktivieren |
-| `MAIL_MODE` | `changes` für Änderungen; `always` für jeden erfolgreichen Abruf |
-| `MAIL_ON_ERROR` | Bei aktiviertem Mailversand zusätzlich Fehlermails senden |
-| `SMTP_SECURE` | `false` für eine Verbindung mit möglichem STARTTLS, etwa Port `587`; `true` für direktes TLS passend zum Server |
-| `SMTP_USER` / `SMTP_PASS` | SMTP-Anmeldung, wenn vom Mailserver verlangt |
-| `MAIL_FROM` / `MAIL_TO` | Absender und Empfänger |
+Der Zeitplan läuft von **06:00 bis 22:55 Uhr**, weil die Stunde 22 eingeschlossen ist. Eine Anmeldung je Lauf; Bereiche werden nacheinander abgerufen. Eine gemeinsame Dateisperre verhindert gleichzeitige reguläre und manuelle Läufe.
 
-`CRON_SCHEDULE=0,30 6-21 * * *` bedeutet: täglich alle 30 Minuten von **06:00 bis 21:30 Uhr** in der eingestellten Zeitzone. Die übrigen Nachtstunden bleiben frei von geplanten Abrufen.
+Bei 429 werden 30 Minuten pausiert, bei Zeitüberschreitungen, Loginproblemen und 5xx typischerweise 15 Minuten, bei sonstigen Fehlern 10 Minuten. 401/429/503 unterbrechen den weiteren Lauf. Derselbe Fehler wird pro Bereich frühestens nach sechs Stunden erneut gemailt; ein geänderter Fehlerstatus darf früher gemeldet werden. Es gibt keine zusätzliche Wiederherstellungsmail. Ein leerer bisher gefüllter Bereich muss dreimal erfolgreich leer abgerufen werden, bevor Entfernungen übernommen werden. Fehlerantworten überschreiben den letzten gültigen Stand nicht.
 
-### Testmail und manueller Abruf
+## Nachweise und Grenzen
 
-#### Testmail
+- Hausaufgaben behalten ihre bisherigen Übersichten, CSV/JSON, Snapshots, Mailvorschauen und Erstbeobachtungen.
+- Die neuen Module dokumentieren neu, geändert, entfernt und wieder vorhanden; Vorher/Nachher steht in den Änderungssnapshots und Nachweisen.
+- `firstSeenAt` ist die erste **Beobachtung durch den Watcher**, kein Veröffentlichungszeitpunkt des Schulmanagers. Zwischen zwei Abrufen entstandene und wieder entfernte Inhalte können unbemerkt bleiben.
+- Fehlzeitenstatus berücksichtigt Entschuldigung, Attest und genehmigte Beurlaubung. Offene/abgelehnte Beurlaubungsanträge haben derzeit kein eigenes Modul.
+- Einträge liefern keine eigene stabile Server-ID. Die Zuordnung nutzt Datum, Typ, Fach und Lehrkraft; Textänderungen bleiben zugeordnet. Gleichzeitig geänderte Identitätsmerkmale oder mehrere gleichartige Einträge können als Entfernung/Neuzugang erscheinen.
+- Einzelne Stunden werden über Datum/Stunde zugeordnet; mehrdeutige parallele Stunden brauchen weitere Merkmale. Auch hier ist eine Zuordnung nicht in jedem Fall eindeutig.
+- Historie und Stundenplan verwenden das rollierende Fenster aus `HOMEWORK_LOOKBACK_DAYS` und `HOMEWORK_LOOKAHEAD_DAYS`. Fehlzeiten, Einträge und Prüfungen beziehen sich auf das aktuelle Schuljahr. Ein Bereichs-/Schuljahreswechsel setzt einen neuen Ausgangsstand. Das Herauswandern aus dem Zeitfenster erzeugt keine Löschmail.
+- Aufbewahrung: 31 Tage als Vorgabe. Alte Snapshots werden rotiert; Erstbeobachtungen aktiver Objekte bleiben erhalten, ihre sehr alten Originalsnapshots können bereits rotiert sein. Für längere Nachweise `RETENTION_DAYS` erhöhen und Backups vorhalten. Lokale Dateien sind kein manipulationssicheres Archiv.
 
-Die Testmail verwendet Beispielaufgaben. Sie schreibt Vorschauen und einen Beispielanhang, verändert aber keine echten Snapshots oder First-Seen-Daten.
-
-```bash
-docker exec -it schulmanager-homework-watcher node src/test-mail.js
-```
-
-Bei erfolgreichem Versand erscheint eine Meldung wie:
+## Dateien
 
 ```text
-[test-mail] Testmail versendet (...). Vorschau: /app/data/mail/latest-test-mail.txt
+data/
+  state/                 bisheriger Hausaufgabenstand, Sperre und Fehlerstatus
+  snapshots/             bisherige Hausaufgaben-Snapshots
+  reports/               bisherige Übersichten/Nachweise
+  mail/                  aktuelle HTML-/Text-Vorschauen je Bereich
+  modules/<bereich>/
+    state.json           Zustand und Beobachtungszeitpunkte
+    snapshots/           Abrufe inklusive Änderungen und Vorher/Nachher
+    reports/             aktuelle CSV-/JSON-Übersicht und Nachweis
+  outbox/<bereich>/      noch ausstehende Mails mit eingefrorenen Anhängen
+  profile/               optionales Browserprofil des Login-Helfers
 ```
 
-Die Dateien `data/mail/latest-test-mail.txt`, `data/mail/latest-test-mail.html` und `data/mail/testmail-pseudohausaufgaben.txt` bleiben zur Kontrolle erhalten. Bei unvollständiger Mail-Konfiguration wird eine Vorschau gespeichert und der fehlende Versand im Terminal gemeldet.
+Ein SMTP-Fehler verliert die Änderungsmail nicht: der Postausgang wird vor Übernahme des neuen Zustands geschrieben. Pro Bereich wird höchstens eine wartende Mail je erfolgreichem Lauf versendet. Die Message-ID bleibt bei Wiederholungen gleich. Bei einem Verbindungsabbruch nach SMTP-Annahme ist eine doppelte Zustellung technisch nicht vollständig auszuschließen. Bei deaktiviertem Mailbereich bleiben bereits wartende Mails bis zur Reaktivierung erhalten.
 
-#### Sofortiger Abruf
+## Betrieb im vorhandenen UGOS-Projekt
 
-Mit diesem Befehl prüfst du den echten Zugang sofort, ohne auf den nächsten geplanten Lauf zu warten:
+**Vor jedem Build/Deploy eines bestehenden UGOS-Projekts die tatsächlichen Labels auslesen.** Der Verzeichnisname ist kein verlässlicher Projektname.
 
 ```bash
-docker exec -it schulmanager-homework-watcher node src/run-once.js
+CONTAINER=schulmanager-homework-watcher
+PROJECT=$(docker inspect "$CONTAINER" --format '{{index .Config.Labels "com.docker.compose.project"}}')
+SERVICE=$(docker inspect "$CONTAINER" --format '{{index .Config.Labels "com.docker.compose.service"}}')
+COMPOSE=/volume2/docker/schulmanager-homework-watcher/docker-compose.yaml
+# Erst nach erfolgreicher Veröffentlichung und Sicherung von .env und data/ ausführen.
+# In der bestehenden Compose-Datei den Image-Tag auf 3.0.1 setzen; Projekt,
+# Service-Namen, Umgebungswerte und Datenpfade nicht durch eine Vorlage ersetzen.
+test -n "$PROJECT" && test -n "$SERVICE" && test -f "$COMPOSE" || exit 1
+docker compose -p "$PROJECT" -f "$COMPOSE" pull "$SERVICE"
+docker compose -p "$PROJECT" -f "$COMPOSE" up -d --no-build "$SERVICE"
 ```
 
-Der Abruf verarbeitet die echten sichtbaren Aufgaben, aktualisiert die Nachweise und kann entsprechend `MAIL_MODE` eine Mail versenden. Er eignet sich zum Prüfen nach Konfigurationsänderungen.
+Die Release-Compose-Datei verweist auf `railsimulatornet/schulmanager-homework-watcher:3.0.1`. Bis dieses Image tatsächlich veröffentlicht ist, ist dieses ZIP als Quellpaket zu behandeln. Der Container läuft mit UID 1001/GID 10, ohne zusätzliche Fähigkeiten, ohne Rechteausweitung und mit schreibgeschütztem Root-Dateisystem. Nur `data/` und das temporäre Verzeichnis sind beschreibbar. Beim Wechsel von einem älteren root-basierten Image müssen die vorhandenen Daten für UID 1001/GID 10 schreibbar sein. Die Gruppenzuordnung und Datenrechte auf dem eigenen Host vor dem Update prüfen.
 
-### Aktualisierung
-
-Führe im bestehenden Projektordner aus:
+### Bedienung
 
 ```bash
-cd /volume2/docker/schulmanager-homework-watcher
-docker compose pull
-docker compose up -d --force-recreate
-docker compose ps
+# Einmaliger Abruf (beachtet Sperre und Abrufpausen)
+docker exec schulmanager-homework-watcher node src/run-once.js
+# Testmail, ausdrücklich unabhängig vom normalen Änderungsversand
+docker exec schulmanager-homework-watcher node src/test-mail.js
+# Optionales Browserprofil vorbereiten; für den regulären API-Abruf nicht nötig
+docker exec schulmanager-homework-watcher node src/login.js
+# Status und datensparsame Laufmeldungen
+docker logs --tail 50 schulmanager-homework-watcher
 ```
 
-In UGOS kannst du das Projekt über **Neu bereitstellen** aktualisieren und dabei den Abruf des neuesten Images aktivieren. Behalte deine `.env` und den vollständigen Ordner `data/`.
+Das Produktionsimage enthält bewusst kein npm; deshalb innerhalb des Containers `node` verwenden. Für Entwicklung sind die bisherigen npm-Skripte weiterhin vorhanden. Die Zugangsdaten werden nur zur Anmeldung/SMTP verwendet; keine Rohantworten der Anmeldung protokollieren. Nachweise enthalten notwendigerweise persönliche Schulangaben und gehören ausschließlich in das lokale geschützte `data/` und an die selbst konfigurierten Empfänger.
 
-Der vorhandene UGOS-Projektname kann vom Ordnernamen abweichen. Verwende bei SSH-Aufrufen den Namen aus dem Container-Label `com.docker.compose.project` mit `docker compose -p NAME`.
+## Tests und Sicherheit
 
-#### Image und Version
+`npm ci --ignore-scripts && npm test` prüft die Module mit anonymisierten Strukturen sowie Diff, leere Antworten, Teilfehler, Loginpause, Laufsperre, HTML/CSV und Postausgang. Die Laufzeitprüfung verlangt Node.js **24.22.1 oder neuer innerhalb Node 24** und prüft den Chromium-Start auf nativen AMD64- und ARM64-Runnern. Beide prüfen dasselbe OCI-Archiv. Die nicht benötigten GStreamer-Pakete zu CVE-2025-3887 werden entfernt und auf Abwesenheit geprüft. Trivy blockiert behebbare HIGH-/CRITICAL-Funde; CodeQL prüft JavaScript und Actions. Die Linux-CI prüft die prozessübergreifende Sperre.
 
-```text
-railsimulatornet/schulmanager-homework-watcher:latest
-```
+Die Mailvorlagen haben Textversionen, eingebettete einfache CSS-Regeln und feste Outlook-Hüllen. Die endgültige Darstellung im tatsächlich eingesetzten Mailprogramm muss am empfangenen Beispiel beurteilt werden.
 
-Anwendungsversion: **2.0.6**. Releases erhalten zusätzlich Versions- und Datumstags. Die Veröffentlichung prüft AMD64 und ARM64 einschließlich Laufzeit- und Trivy-Tests und überträgt anschließend dieselben geprüften Images. SBOM- und Provenance-Attestierungen gehören zum Build.
+## Backup und Rückkehr
 
-Die Laufzeitprüfung verlangt mindestens Node.js **24.22.1** innerhalb der Node-24-Reihe und prüft den Chromium-Start auf nativen AMD64- und ARM64-Runnern. Beide prüfen dasselbe Image-Archiv, das erst nach beiden erfolgreichen Prüfungen veröffentlicht wird. Zwei ungenutzte WebKit-Codecpakete werden wegen CVE-2025-3887 aus dem Image entfernt und vor jeder Veröffentlichung auf Abwesenheit geprüft.
+Vor einem späteren produktiven Wechsel ein vollständiges, geschützt aufbewahrtes Backup von `.env` und `data/` erstellen. Diese Daten dürfen nicht veröffentlicht werden.
 
-Der wöchentliche Wartungslauf aktualisiert nach bestandener Prüfung nur `latest`. Die Versions-Tags werden durch diesen Wochenlauf nicht verändert. Behebbare HIGH- oder CRITICAL-Funde und Scanfehler verhindern die Veröffentlichung.
+Für eine Rückkehr zuerst das aktuelle Projekt und alle neuen Daten sichern, danach den bestehenden Service mit dem zuvor ausgelesenen Projektnamen stoppen. Das gewünschte Backup zunächst in ein getrenntes Verzeichnis entpacken. Die ursprüngliche Compose-Konfiguration und den zugehörigen Stand bewusst wiederherstellen; neue Daten nicht durch unkontrolliertes Entpacken überschreiben. Alte Images mit anderer UID benötigen passende Datenrechte. Die neuen Modulverzeichnisse werden von v2 nicht genutzt und sollten trotzdem erhalten bleiben.
 
-### Kontrolle und Fehlersuche
+Für einen späteren produktiven Wechsel erst die Veröffentlichung und AMD64-/ARM64-Prüfungen abschließen. Danach den fest veröffentlichten Versionstag beziehen und den Service mit dem aus den Labels ermittelten Projektnamen neu erstellen. `.env`, `data/` und Volumepfade erhalten.
 
-Live-Logs anzeigen:
-
-```bash
-docker logs -f schulmanager-homework-watcher
-```
-
-Beispiele aus dem Protokoll:
-
-```text
-[watcher] Fertig. Änderungen: neu 0, entfernt 0
-[watcher] Fehler: ...
-```
-
-Bei Login-Problemen prüfst du deinen Zugang und die Erreichbarkeit von Schulmanager. Bei Versandproblemen helfen die Testmail und die Vorschauen unter `data/mail/`.
-
-#### Compose findet keine Konfiguration
-
-`no configuration file provided: not found` bedeutet meist, dass der Aufruf im falschen Ordner erfolgt. Wechsle in den Projektordner oder gib die Compose-Datei vollständig an:
-
-```bash
-docker compose -f /volume2/docker/schulmanager-homework-watcher/docker-compose.yaml pull
-docker compose -f /volume2/docker/schulmanager-homework-watcher/docker-compose.yaml up -d
-```
-
-Übernimm auch hierbei den bestehenden Projektnamen, falls du `-p NAME` benötigst.
-
-### Projektstruktur und Daten
-
-| Pfad | Inhalt |
-| --- | --- |
-| `.env.example` / `.env` | Vorlage und eigene Konfiguration |
-| `docker-compose.yaml` | Projekt mit vorgebautem Docker-Image |
-| `src/` | Anwendung, Scheduler und Mail-Funktionen |
-| `data/mail/` | Text- und HTML-Vorschauen: `latest-mail.*`, `latest-test-mail.*`, `latest-error-mail.*` |
-| `data/reports/` | `latest-evidence.md` sowie First-Seen-Berichte als CSV und JSON |
-| `data/snapshots/` | Gespeicherte Abrufe |
-| `data/logs/` | Fehler- und Debug-Informationen |
-| `data/profile/` / `data/state/` | Browserprofil und persistenter Anwendungszustand |
-
-Im rollierenden Zeitfenster heißen die First-Seen-Berichte `watch-window-first-seen.csv` und `.json`. Bei `ONLY_CURRENT_WEEK=true` werden `current-week-first-seen.csv` und `.json` verwendet. Der Zeitpunkt „erstmals erkannt“ beschreibt den ersten vom Watcher festgehaltenen Treffer.
-
-### Dokumentation
-
-- [Ausführliches deutsches Handbuch](docs/Schulmanager-Homework-Watcher_Handbuch_DE_v1.0.pdf)
-- [Änderungsverlauf](CHANGELOG.md)
-- [Releases](https://github.com/Railsimulatornet/schulmanager-homework-watcher/releases)
-
-### Lizenz
-
-[MIT License](LICENSE) · Copyright Roman Glos 2026.
+Die vollständige Variablenvorlage steht in [.env.example](.env.example). Die Lizenz steht in [LICENSE](LICENSE).
 
 ## English
 
-Schulmanager Homework Watcher regularly checks the homework visible through your own Schulmanager account. It compares successive checks, records changes and can notify you by email.
+This is a community project, not an official Schulmanager or UGREEN product. Use your own parent or student account.
 
-This is a community solution, not an official Schulmanager or UGREEN product. Use it at your own risk.
+Version **3.0.1** builds on the tested local modular watcher and adopts the security fixes from 2.0.6. It collects data visible to your own Schulmanager account, records changes, and sends separate German HTML/text emails. `firstSeenAt` means first observed by this watcher, not published by Schulmanager.
 
-### Features
+### Areas and notifications
 
-- Detect new and removed entries within the monitored date range
-- Record when an entry was first seen
-- Send HTML and plain-text email with reports and attachments
-- Check SMTP, layout and attachments through a test email
-- Run on a schedule or start a check manually
-- Retain snapshots, email previews and reports locally, and rotate old files
-- Prebuilt Docker image for `linux/amd64` and `linux/arm64`
+| Area | Collect | Change email | Default |
+| --- | --- | --- | --- |
+| Homework | `WATCH_HOMEWORK` | `MAIL_HOMEWORK` | both on |
+| Absences with status | `WATCH_ABSENCES` | `MAIL_ABSENCES` | both on |
+| Entries | `WATCH_ENTRIES` | `MAIL_ENTRIES` | both on |
+| Hour-by-hour history | `WATCH_HISTORY` | `MAIL_HISTORY` | collection on, email off |
+| Exams | `WATCH_EXAMS` | `MAIL_EXAMS` | both on |
+| Timetable changes | `WATCH_TIMETABLE` | `MAIL_TIMETABLE` | both on |
 
-### Requirements
+`WATCH_*=false` pauses collection for that area. `MAIL_*=false` keeps collecting and recording evidence while suppressing its email. `MAIL_ENABLED=false` stops all sending. `MAIL_MODE=changes` is recommended; homework still supports `always`. The first successful check of a new area creates a silent baseline.
 
-- UGREEN NAS with UGOS Pro and the Docker app, or a Linux host with Docker Compose
-- AMD64 or ARM64 processor
-- Your own parent or student Schulmanager account
-- Internet access to Schulmanager and an optional reachable SMTP server
-- A persistent, writable project directory for `data/`
+### Schedule and load
 
-The application's existing email and log messages are in German. This README provides the complete setup instructions in German and English.
+`TZ`, `CRON_SCHEDULE`, and `RUN_ON_START` control scheduling. The sample schedule `*/5 6-22 * * *` runs from 06:00 through 22:55. One login is used per run; areas are checked in sequence. A shared lock prevents simultaneous scheduled and manual runs. Lookback/lookahead form a rolling window for homework, history, and timetable. Absences, entries, and exams cover the school year. Leaving the rolling window does not trigger a removal email.
 
-### Quick start
+HTTP 429 normally pauses fetching for 30 minutes; timeouts, login failures, and 5xx for 15 minutes; other failures for 10 minutes. HTTP 401/429/503 may stop the remainder of a run. Identical errors per area are emailed at most once per configured cooldown (six hours by default). A changed error status may be reported sooner. A previously populated area must return empty successfully three times before removals are accepted. Error responses never overwrite valid state; an area failure does not block independent areas while the session is usable.
 
-1. Download the package from [Releases](https://github.com/Railsimulatornet/schulmanager-homework-watcher/releases/latest), or use the repository files.
-2. Copy the project directory to your host, for example to `/volume2/docker/schulmanager-homework-watcher`.
-3. Create the configuration. An existing `.env` is preserved:
+### Evidence and limitations
 
-```bash
-cd /volume2/docker/schulmanager-homework-watcher
-test -f .env || cp .env.example .env
-```
+Homework retains its earlier overview, CSV/JSON, snapshots, mail previews, and first-observation times. Other areas record new, changed, removed, and returned items with before/after values. Each area has separate state, snapshots, reports, previews, and email controls. Approved leave is reflected in absence status; pending or rejected leave requests do not have their own area.
 
-4. Enter your Schulmanager and SMTP details in `.env`, then adjust the schedule and monitoring window.
-5. Pull and start the container from the same directory:
+Entries have no stable server ID. Matching uses date, type, subject, and teacher, so simultaneous changes to identity fields or multiple similar entries can appear as removal and addition. Timetable lessons use date/period and stable source IDs, with prior state used to retain `firstSeenAt` when a slot splits into multiple substitutions. Contradictory rows sharing the same source ID fail the affected area rather than saving a false diff. Content added and removed between checks cannot be observed.
 
-```bash
-docker compose pull
-docker compose up -d
-docker compose ps
-```
+### Files and mail delivery
 
-In UGOS, open **Docker → Project → Create**, select the existing project directory, import `docker-compose.yaml` and deploy the project. Normal operation uses the published image.
+`data/state/` holds previous homework state, locks, and error status; `data/snapshots/` and `data/reports/` hold homework evidence; `data/mail/` holds current HTML/text previews. Each `data/modules/<area>/` has its own state, snapshots, and reports. `data/outbox/<area>/` holds pending messages with frozen attachments. `data/profile/` is an optional browser profile.
 
-### Configuration
+If SMTP fails, the prepared change email remains in the outbox. A disconnect after SMTP accepted a message can still cause duplicate delivery. Pending messages for a disabled email area remain until it is enabled again. All persistent data can contain personal school information and must remain private.
 
-The complete template is in [.env.example](.env.example). These example values use the supplied monitoring window and schedule:
+### Existing UGOS projects and commands
 
-```env
-TZ=Europe/Berlin
-SCHULMANAGER_BASE_URL=https://login.schulmanager-online.de
-SCHULMANAGER_USERNAME=your-email@example.com
-SCHULMANAGER_PASSWORD=YOUR_PASSWORD
+Before **every** build or deployment of an existing UGOS Compose project, read the real project and service from the container labels `com.docker.compose.project` and `com.docker.compose.service`. Never infer the project name from the directory. Always run Compose with `-p "$PROJECT" -f "$COMPOSE"`. After backing up `.env` and `data/` and confirming publication, set the existing service's image tag to `3.0.1`, then run `pull "$SERVICE"` and `up -d --no-build "$SERVICE"` with those project/file options. Do not replace existing service names or data paths with example values. Recreating the container is required for updated `.env` values to take effect.
 
-ONLY_CURRENT_WEEK=false
-HOMEWORK_LOOKBACK_DAYS=10
-HOMEWORK_LOOKAHEAD_DAYS=7
-CRON_SCHEDULE=0,30 6-21 * * *
-RUN_ON_START=true
-RETENTION_DAYS=31
-
-MAIL_ENABLED=true
-MAIL_MODE=changes
-MAIL_ON_ERROR=true
-SMTP_HOST=smtp.example.com
-SMTP_PORT=587
-SMTP_SECURE=false
-SMTP_USER=sender@example.com
-SMTP_PASS=YOUR_SMTP_PASSWORD
-MAIL_FROM=sender@example.com
-MAIL_TO=recipient@example.com
-```
-
-| Setting | Purpose |
-| --- | --- |
-| `SCHULMANAGER_USERNAME` / `SCHULMANAGER_PASSWORD` | Your own Schulmanager account |
-| `ONLY_CURRENT_WEEK` | Set to `true` to limit checks to the current week |
-| `HOMEWORK_LOOKBACK_DAYS` / `HOMEWORK_LOOKAHEAD_DAYS` | Set the rolling date range when `ONLY_CURRENT_WEEK=false` |
-| `CRON_SCHEDULE` | Scheduled checks in cron format |
-| `TZ` | Time zone for the schedule, emails and logs |
-| `RUN_ON_START` | Set to `true` to check immediately after container startup |
-| `RETENTION_DAYS` | Retention of old runtime files in days |
-| `MAIL_ENABLED` | Enable email delivery |
-| `MAIL_MODE` | `changes` for changes only; `always` for each successful check |
-| `MAIL_ON_ERROR` | Also send error emails when email delivery is enabled |
-| `SMTP_SECURE` | `false` for a connection that may use STARTTLS, such as port `587`; `true` for implicit TLS as required by the server |
-| `SMTP_USER` / `SMTP_PASS` | SMTP authentication, if required by your mail server |
-| `MAIL_FROM` / `MAIL_TO` | Sender and recipient |
-
-`CRON_SCHEDULE=0,30 6-21 * * *` means every day, every 30 minutes from **06:00 through 21:30** in the configured time zone. No scheduled checks run during the remaining overnight hours.
-
-### Test email and manual checks
-
-#### Test email
-
-The test email uses sample homework. It writes previews and an example attachment without changing real snapshots or first-seen data.
+The release Compose file names `railsimulatornet/schulmanager-homework-watcher:3.0.1`. Until that image is published, use this ZIP as a source package. The container runs as UID 1001/GID 10 with a read-only root filesystem, all capabilities dropped, and no privilege escalation. Only `data/` and `/tmp` are writable. When upgrading from an older root-based image, existing data must be writable by UID 1001/GID 10; check group mapping and data permissions before updating.
 
 ```bash
-docker exec -it schulmanager-homework-watcher node src/test-mail.js
+docker exec schulmanager-homework-watcher node src/run-once.js
+docker exec schulmanager-homework-watcher node src/test-mail.js
+docker exec schulmanager-homework-watcher node src/login.js
+docker logs --tail 50 schulmanager-homework-watcher
 ```
 
-After successful delivery, the application prints a message such as:
+The browser login helper is optional for regular API fetching. npm is deliberately removed from the production image, so container commands use `node`. Credentials are used only for login and SMTP; do not log raw login responses. Before a later production update, back up private `.env` and `data/`, wait for actual publication and both architecture checks, then use the versioned image tag while retaining the existing data paths.
 
-```text
-[test-mail] Testmail versendet (...). Vorschau: /app/data/mail/latest-test-mail.txt
-```
+### Tests and security
 
-The files `data/mail/latest-test-mail.txt`, `data/mail/latest-test-mail.html` and `data/mail/testmail-pseudohausaufgaben.txt` remain available for inspection. If email configuration is incomplete, a preview is saved and the terminal reports that delivery did not take place.
+`npm ci --ignore-scripts && npm test` covers anonymized module fixtures, diffs, empty responses, partial errors, login pauses, mail rendering, outbox, and the timetable collision. Linux CI also tests the cross-process lock. Release workflows build one OCI archive for AMD64 and ARM64, run on native runners, require Node.js 24.22.1 or later **within Node 24**, test Chromium startup, and check that the unused GStreamer packages affected by CVE-2025-3887 are absent. Trivy blocks fixable HIGH/CRITICAL findings; CodeQL analyzes JavaScript and Actions. Publication requires both architecture checks.
 
-#### Run a check immediately
-
-This command checks the real account immediately without waiting for the next scheduled run:
-
-```bash
-docker exec -it schulmanager-homework-watcher node src/run-once.js
-```
-
-It processes actual visible homework, updates the recorded evidence and may send an email according to `MAIL_MODE`. Use it to check configuration changes.
-
-### Updating
-
-Run from the existing project directory:
-
-```bash
-cd /volume2/docker/schulmanager-homework-watcher
-docker compose pull
-docker compose up -d --force-recreate
-docker compose ps
-```
-
-In UGOS, redeploy the project and enable downloading the latest image. Keep your `.env` and the complete `data/` directory.
-
-The existing UGOS project name may differ from the directory name. For SSH commands, use the name from the container label `com.docker.compose.project` with `docker compose -p NAME`.
-
-#### Image and version
-
-```text
-railsimulatornet/schulmanager-homework-watcher:latest
-```
-
-Application version: **2.0.6**. Releases also receive version and date tags. The publication process checks AMD64 and ARM64, including runtime and Trivy tests, and then transfers the same verified images. Builds include SBOM and provenance attestations.
-
-Runtime checks require Node.js **24.22.1 or later within Node 24** and test Chromium startup on native AMD64 and ARM64 runners. Both verify the same image archive, which is published only after both checks succeed. Two unused WebKit codec packages are removed from the image because of CVE-2025-3887, and their absence is checked before every publication.
-
-After successful checks, the weekly maintenance run updates only `latest`. It does not change version tags. Fixable HIGH or CRITICAL findings and scan errors block publication.
-
-### Checks and troubleshooting
-
-Follow the live logs:
-
-```bash
-docker logs -f schulmanager-homework-watcher
-```
-
-Example log messages:
-
-```text
-[watcher] Fertig. Änderungen: neu 0, entfernt 0
-[watcher] Fehler: ...
-```
-
-For login problems, check your credentials and access to Schulmanager. For delivery problems, use the test email and inspect the previews under `data/mail/`.
-
-#### Compose cannot find its configuration
-
-`no configuration file provided: not found` usually means the command was run from the wrong directory. Switch to the project directory or provide the full Compose file path:
-
-```bash
-docker compose -f /volume2/docker/schulmanager-homework-watcher/docker-compose.yaml pull
-docker compose -f /volume2/docker/schulmanager-homework-watcher/docker-compose.yaml up -d
-```
-
-Use the existing project name here as well if you need `-p NAME`.
-
-### Project structure and data
-
-| Path | Contents |
-| --- | --- |
-| `.env.example` / `.env` | Template and your own configuration |
-| `docker-compose.yaml` | Project using the prebuilt Docker image |
-| `src/` | Application, scheduler and email functions |
-| `data/mail/` | Text and HTML previews: `latest-mail.*`, `latest-test-mail.*`, `latest-error-mail.*` |
-| `data/reports/` | `latest-evidence.md` and first-seen reports as CSV and JSON |
-| `data/snapshots/` | Saved checks |
-| `data/logs/` | Error and debug information |
-| `data/profile/` / `data/state/` | Browser profile and persistent application state |
-
-For a rolling date range, the first-seen reports are named `watch-window-first-seen.csv` and `.json`. With `ONLY_CURRENT_WEEK=true`, the names are `current-week-first-seen.csv` and `.json`. The first-seen timestamp records when the watcher first captured an entry.
-
-### Documentation
-
-- [Detailed German handbook](docs/Schulmanager-Homework-Watcher_Handbuch_DE_v1.0.pdf)
-- [Changelog](CHANGELOG.md)
-- [Releases](https://github.com/Railsimulatornet/schulmanager-homework-watcher/releases)
-
-### License
-
-[MIT License](LICENSE) · Copyright Roman Glos 2026.
+The complete configuration template is [.env.example](.env.example). License: [MIT](LICENSE).

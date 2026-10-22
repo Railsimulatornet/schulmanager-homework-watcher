@@ -30,6 +30,15 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Prepare disk space for multi-arch build
+        run: bash .github/scripts/prepare-runner.sh
+
+      - name: Test watcher source
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test
+
       - name: Read release metadata
         id: release
         shell: bash
@@ -220,20 +229,14 @@ jobs:
           set -euo pipefail
 
           ZIP="${RUNNER_TEMP}/schulmanager-homework-watcher_v${{ needs.build.outputs.version }}.zip"
-          PDF="${RUNNER_TEMP}/Schulmanager-Homework-Watcher_Handbuch_DE.pdf"
 
           git archive \
             --format=zip \
             --output="${ZIP}" \
             "${GITHUB_SHA}"
 
-          cp \
-            docs/Schulmanager-Homework-Watcher_Handbuch_DE_v1.0.pdf \
-            "${PDF}"
-
           {
             echo "zip=${ZIP}"
-            echo "pdf=${PDF}"
           } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
@@ -243,7 +246,6 @@ jobs:
           gh release create \
             "${{ needs.build.outputs.tag }}" \
             "${{ steps.assets.outputs.zip }}" \
-            "${{ steps.assets.outputs.pdf }}" \
             --target "${GITHUB_SHA}" \
             --title "${{ needs.build.outputs.title }}" \
             --notes-file .github/release-notes.md

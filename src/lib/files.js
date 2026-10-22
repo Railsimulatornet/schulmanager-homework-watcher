@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 
 function ensureDir(dirPath) {
-  fs.mkdirSync(dirPath, { recursive: true });
+  fs.mkdirSync(dirPath, { recursive: true, mode: 0o770 });
 }
 
 function ensureDirs(paths) {
@@ -16,12 +16,14 @@ function readJson(filePath, fallback = null) {
 
 function writeJson(filePath, value) {
   ensureDir(path.dirname(filePath));
-  fs.writeFileSync(filePath, JSON.stringify(value, null, 2) + '\n', 'utf8');
+  writeText(filePath, JSON.stringify(value, null, 2) + '\n');
 }
 
 function writeText(filePath, value) {
   ensureDir(path.dirname(filePath));
-  fs.writeFileSync(filePath, value, 'utf8');
+  const temporary = `${filePath}.${process.pid}.tmp`;
+  fs.writeFileSync(temporary, value, { encoding: 'utf8', mode: 0o660 });
+  fs.renameSync(temporary, filePath);
 }
 
 function removeIfExists(filePath) {

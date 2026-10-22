@@ -7,7 +7,8 @@ const { attemptAutoLogin } = require('./lib/login');
 installTimestampedConsole(config.timezone);
 
 async function main() {
-  ensureDirs([config.dataDir, config.profileDir]);
+  ensureDirs([config.dataDir, config.profileDir, config.logsDir, config.stateDir]);
+  require('fs').chmodSync(config.profileDir, 0o700);
 
   const context = await chromium.launchPersistentContext(config.profileDir, {
     headless: config.headless,
@@ -20,6 +21,7 @@ async function main() {
   try {
     const page = context.pages()[0] || (await context.newPage());
     await attemptAutoLogin(page, config);
+    if (new URL(config.homeworkUrl).origin !== new URL(config.baseUrl).origin) throw new Error('Abweichende Herkunft der Hausaufgabenseite.');
     await page.goto(config.homeworkUrl, { waitUntil: 'domcontentloaded', timeout: config.playwrightTimeoutMs });
     await page.waitForTimeout(2500);
     console.log('[login] Login abgeschlossen. Profil wurde in data/profile gespeichert.');
@@ -29,6 +31,6 @@ async function main() {
 }
 
 main().catch((error) => {
-  console.error('[login] Fehler:', error.message);
+  console.error('[login] Anmeldung fehlgeschlagen; Zugang und Erreichbarkeit prüfen.');
   process.exitCode = 1;
 });

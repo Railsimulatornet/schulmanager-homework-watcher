@@ -1,5 +1,26 @@
 # Changelog
 
+## v3.0.1 - 2026-10-22
+
+### Funktionen
+
+- Die lokal erprobte modulare Erweiterung wird zur Funktionsbasis: Hausaufgaben, Fehlzeiten, Einträge, stundengenaue Historie, Klassenarbeiten und Stundenplan.
+- Getrennte Erfassung und Änderungsmails pro Bereich, gemeinsamer Login, stille Ausgangsstände, persistente Zustände, Snapshots, Berichte, Mailvorschauen und Postausgang.
+- Nachweise für neu, geändert, entfernt und wieder vorhanden mit `firstSeenAt` und Änderungszeit. Leere Antworten benötigen drei erfolgreiche Bestätigungen; Fehlerantworten überschreiben gültige Daten nicht.
+- Der Stundenplan-Fix verhindert Kollisionen bei mehreren Vertretungen derselben ursprünglichen Stunde und erhält bisherige Erstbeobachtungen. Widersprüchliche Quellkennungen werden als Abruffehler behandelt.
+- Run-once, Scheduler, Browser-Login-Helfer und Testmail bleiben erhalten. Mail- und Fehler-Cooldown sowie Modul-Isolation bleiben aktiv.
+
+### Sicherheit und Veröffentlichung
+
+- Node.js 24.22.1 oder neuer innerhalb der Node-24-Reihe wird beim Image-Test erzwungen.
+- Die nicht benötigten Pakete `gstreamer1.0-plugins-bad` und `libgstreamer-plugins-bad1.0-0` werden wegen CVE-2025-3887 entfernt; ihre Abwesenheit wird geprüft.
+- `dotenv` 18.0.7 und `nodemailer` 10.1.1 übernommen; Playwright 1.62.1, Luxon 3.7.2 und node-cron 4.6.0 bleiben festgesetzt. Ein Lockfile ermöglicht `npm ci`.
+- Sicherheitsgehärtetes Image und Compose: UID 1001/GID 10, schreibgeschütztes Root-Dateisystem, `cap_drop: ALL`, `no-new-privileges`, beschränkte Schreibpfade.
+- Prüfabläufe aus 2.0.6: ein gemeinsames AMD64-/ARM64-OCI-Archiv, native Laufzeit- und Chromium-Prüfungen, Trivy-Gate, CodeQL, verifizierte Veröffentlichung und Dependabot. Zusätzlich laufen die Watcher-Regressionstests vor einem Build.
+- README in Deutsch und Englisch, bereinigte `.env.example`, Release-Notes in beiden Sprachen.
+
+Die Erweiterung basiert auf der lokal getesteten Version. Der Release-Workflow veröffentlicht nur nach erfolgreichen Prüfungen für beide Architekturen.
+
 ## v2.0.6 - 2026-10-22
 
 ### Sicherheit und Wartung

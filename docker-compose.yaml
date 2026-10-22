@@ -1,8 +1,16 @@
 services:
   schulmanager-homework-watcher:
-    image: railsimulatornet/schulmanager-homework-watcher:latest
+    image: railsimulatornet/schulmanager-homework-watcher:3.0.1
     container_name: schulmanager-homework-watcher
     restart: unless-stopped
+    user: "1001:10"
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp:rw,nosuid,size=256m
     env_file:
       - .env
     volumes:

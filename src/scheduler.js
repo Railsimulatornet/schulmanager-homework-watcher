@@ -9,15 +9,15 @@ console.log(`[scheduler] Starte mit Zeitplan: ${config.cronSchedule}`);
 console.log(`[scheduler] Zeitzone: ${config.timezone}`);
 
 cron.schedule(config.cronSchedule, () => {
-  runWatcher().catch((error) => {
-    console.error('[scheduler] Lauf fehlgeschlagen:', error.message);
+  runWatcher().catch(() => {
+    console.error('[scheduler] Lauf fehlgeschlagen. Details in der lokalen Fehlerübersicht.');
   });
 }, {
   timezone: config.timezone
 });
 
 if (config.runOnStart) {
-  runWatcher().catch((error) => {
-    console.error('[scheduler] Initialer Lauf fehlgeschlagen:', error.message);
+  runWatcher().catch(() => {
+    console.error('[scheduler] Initialer Lauf fehlgeschlagen. Details in der lokalen Fehlerübersicht.');
   });
 }

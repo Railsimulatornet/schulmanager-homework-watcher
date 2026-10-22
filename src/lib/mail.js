@@ -1,7 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const nodemailer = require('nodemailer');
-const { ensureDir } = require('./files');
+const { writeText } = require('./files');
 
 function isMailConfigured(config) {
   return (
@@ -22,6 +22,10 @@ async function sendMail(config, payload) {
     host: config.mail.host,
     port: config.mail.port,
     secure: config.mail.secure,
+    requireTLS: !config.mail.secure,
+    connectionTimeout: 30000,
+    greetingTimeout: 30000,
+    socketTimeout: 60000,
     auth: config.mail.user
       ? {
           user: config.mail.user,
@@ -38,6 +42,7 @@ async function sendMail(config, payload) {
     subject: payload.subject,
     text: payload.text,
     html: payload.html,
+    messageId: payload.messageId,
     attachments: payload.attachments || []
   });
 
@@ -46,8 +51,7 @@ async function sendMail(config, payload) {
 
 function persistMailPreview(config, fileName, content) {
   const filePath = path.join(config.mailDir, fileName);
-  ensureDir(path.dirname(filePath));
-  fs.writeFileSync(filePath, content, 'utf8');
+  writeText(filePath, content);
   return filePath;
 }
 
