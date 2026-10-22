@@ -1,45 +1,29 @@
-### Schulmanager Homework Watcher v2.0.6
+# Schulmanager Homework Watcher v3.0.1
 
 ## Deutsch
 
-Dieses Sicherheitsupdate erneuert die Node.js-Laufzeit und entfernt zwei nicht benötigte GStreamer-Pakete aus dem Docker-Image.
+Mit v3.0.1 kommt jetzt auch die größere Erweiterung, die ich bereits im Alltag getestet habe. 🙂 Der Watcher prüft nicht mehr nur Hausaufgaben, sondern zusätzlich Fehlzeiten, Einträge, die Stundenhistorie, Klassenarbeiten und Stundenplanänderungen.
 
-- Die Veröffentlichung verlangt jetzt mindestens **Node.js 24.22.1** innerhalb der Node-24-Reihe. Damit werden ältere Laufzeiten mit den im Oktober 2026 behobenen Sicherheitslücken abgewiesen.
-- `gstreamer1.0-plugins-bad` und `libgstreamer-plugins-bad1.0-0` werden wegen **CVE-2025-3887** entfernt. Sie gehören zu den mitgelieferten WebKit-Abhängigkeiten; der Watcher verwendet Chromium.
-- Native AMD64- und ARM64-Runner kontrollieren die Node-Version, die entfernten Pakete und den Chromium-Start mit einer lokalen Testseite. Beide prüfen dasselbe Image-Archiv; die Veröffentlichung verlangt beide passenden Prüfnachweise. Die bisherigen Syntax-, Mail-Kompatibilitäts- und Trivy-Prüfungen bleiben erhalten.
+• Jeder Bereich lässt sich einzeln überwachen und bei Bedarf per E-Mail benachrichtigen.
+• Änderungen werden mit Nachweisen dokumentiert – inklusive Erstbeobachtung, Änderungen und entfernten bzw. wieder vorhandenen Einträgen.
+• Mehrere Vertretungen derselben ursprünglichen Stunde werden im Stundenplan sauber unterschieden.
+• Nicht versendete Mails bleiben im Postausgang erhalten. Fehler in einem Bereich sollen die anderen Bereiche möglichst nicht aufhalten.
+• Die Sicherheitskorrekturen aus v2.0.6 sind enthalten, darunter Node.js 24.22.1 und die Entfernung der nicht benötigten GStreamer-Pakete.
 
-Hausaufgabenabruf, Zeitplan, Mailversand und vorhandene Daten behalten ihr bisheriges Verhalten. Playwright und Chromium bleiben auf dem bisherigen Versionsstand.
+**Wichtig beim Update:** Vorher `.env` und den kompletten Ordner `data/` sichern und beibehalten. Die neuen `WATCH_*`- und `MAIL_*`-Einstellungen stehen in der [Beispielkonfiguration](https://github.com/Railsimulatornet/schulmanager-homework-watcher/blob/v3.0.1/.env.example). Der erste erfolgreiche Abruf eines neu aktivierten Bereichs erstellt zunächst einen Ausgangsstand, ohne eine Änderungsmail zu senden.
 
-### Aktualisierung
-
-Im bestehenden Projektordner:
-
-```bash
-docker compose pull
-docker compose up -d --force-recreate
-```
-
-In der UGOS-Docker-App: **Neu bereitstellen** und **Das neuste Image abrufen** aktivieren. Die vorhandene `.env` und der Ordner `data/` bleiben erhalten.
+Docker-Images für AMD64 und ARM64. Beide Plattformen werden vor der Veröffentlichung mit Chromium- und Sicherheitstests geprüft.
 
 ## English
 
-This security update refreshes the Node.js runtime and removes two unused GStreamer packages from the Docker image.
+Version 3.0.1 includes the larger extension I've already been testing in everyday use. 🙂 The watcher now covers more than homework: absences, entries, lesson history, exams and timetable changes are included too.
 
-- Publication now requires **Node.js 24.22.1 or later within Node 24**, rejecting older runtimes affected by the October 2026 security issues.
-- `gstreamer1.0-plugins-bad` and `libgstreamer-plugins-bad1.0-0` are removed because of **CVE-2025-3887**. They are inherited WebKit dependencies; the watcher uses Chromium.
-- Native AMD64 and ARM64 runners check the Node version, removed packages and Chromium startup with a local test page, alongside the existing syntax, mail compatibility and Trivy checks. Both verify the same image archive; publication requires matching verification receipts from both platforms.
+• Monitoring and email notifications can be enabled separately for each area.
+• Changes are recorded with evidence, including first seen, updated, removed and returned items.
+• Multiple substitutions for the same original lesson are handled separately.
+• Emails that could not be delivered remain in the outbox. Problems in one area should not stop the others where possible.
+• The security fixes from v2.0.6 are included, notably Node.js 24.22.1 and removal of the unused GStreamer packages.
 
-Homework collection, scheduling, email delivery and existing data retain their previous behavior. Playwright and Chromium remain at their existing versions.
+**Before updating:** Back up and keep your `.env` and entire `data/` directory. The new `WATCH_*` and `MAIL_*` options are in the [example configuration](https://github.com/Railsimulatornet/schulmanager-homework-watcher/blob/v3.0.1/.env.example). The first successful check of a newly enabled area creates a baseline without sending a change notification.
 
-To update, run the commands above in the existing project directory, or redeploy through the UGOS Docker app with the latest-image download enabled. Keep your `.env` and `data/` directory.
-
-## Docker
-
-`railsimulatornet/schulmanager-homework-watcher:2.0.6`
-
-Platforms: `linux/amd64`, `linux/arm64`. Additional tags: `2.0`, `latest` and the publication date.
-
-## References
-
-- [Node.js 24.22.1 security release](https://nodejs.org/en/blog/release/v24.22.1/)
-- [Ubuntu: CVE-2025-3887](https://ubuntu.com/security/CVE-2025-3887)
+Docker images are available for AMD64 and ARM64. Both platforms undergo Chromium and security checks before publication.
