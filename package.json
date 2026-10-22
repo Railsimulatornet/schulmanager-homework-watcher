@@ -1,6 +1,6 @@
 {
   "name": "schulmanager-homework-watcher",
-  "version": "2.0.5",
+  "version": "2.0.6",
   "description": "Schulmanager-Abruf für Hausaufgaben mit First-Seen-Nachweis und Mailversand",
   "main": "src/scheduler.js",
   "scripts": {

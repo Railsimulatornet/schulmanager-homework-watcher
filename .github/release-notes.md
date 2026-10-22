@@ -1,49 +1,45 @@
-### Schulmanager Homework Watcher v2.0.5
+### Schulmanager Homework Watcher v2.0.6
 
-## Was ist neu?
+## Deutsch
 
-Dieses Update bringt die wichtigsten Node.js-Abhängigkeiten auf den aktuell getesteten Stand und verbessert gleichzeitig die automatische Sicherheitsprüfung.
+Dieses Sicherheitsupdate erneuert die Node.js-Laufzeit und entfernt zwei nicht benötigte GStreamer-Pakete aus dem Docker-Image.
 
-• Nodemailer wurde auf Version `10.0.11` aktualisiert.  
-• dotenv wurde auf Version `18.0.4` aktualisiert.  
-• Luxon `3.7.2`, node-cron `4.6.0` und Playwright `1.62.1` sind jetzt ebenfalls auf die getesteten Versionen festgesetzt.  
-• Der automatische Security-Check prüft zusätzlich die wichtigsten APIs von dotenv und Nodemailer.  
-• Das frisch gebaute Image wurde mit Trivy geprüft: keine behebbaren HIGH- oder CRITICAL-Funde.  
-• Der reale Testmail-Versand mit den neuen Versionen war erfolgreich.
+- Die Veröffentlichung verlangt jetzt mindestens **Node.js 24.22.1** innerhalb der Node-24-Reihe. Damit werden ältere Laufzeiten mit den im Oktober 2026 behobenen Sicherheitslücken abgewiesen.
+- `gstreamer1.0-plugins-bad` und `libgstreamer-plugins-bad1.0-0` werden wegen **CVE-2025-3887** entfernt. Sie gehören zu den mitgelieferten WebKit-Abhängigkeiten; der Watcher verwendet Chromium.
+- Native AMD64- und ARM64-Runner kontrollieren die Node-Version, die entfernten Pakete und den Chromium-Start mit einer lokalen Testseite. Beide prüfen dasselbe Image-Archiv; die Veröffentlichung verlangt beide passenden Prüfnachweise. Die bisherigen Syntax-, Mail-Kompatibilitäts- und Trivy-Prüfungen bleiben erhalten.
 
-An der eigentlichen Funktion des Schulmanager Homework Watchers ändert sich mit diesem Release nichts.
+Hausaufgabenabruf, Zeitplan, Mailversand und vorhandene Daten behalten ihr bisheriges Verhalten. Playwright und Chromium bleiben auf dem bisherigen Versionsstand.
 
-## Docker-Image
+### Aktualisierung
 
-Das Image unterstützt weiterhin:
-
-• `linux/amd64`  
-• `linux/arm64`
-
-Docker-Image:
-
-`railsimulatornet/schulmanager-homework-watcher:latest`
-
-Verfügbare Release-Tags:
-
-• `2.0.5`  
-• `2.0`  
-• `latest`  
-• Datumstag der Veröffentlichung
-
-## Aktualisierung
-
-Im Projektordner:
+Im bestehenden Projektordner:
 
 ```bash
 docker compose pull
 docker compose up -d --force-recreate
 ```
 
-In der UGOS-Docker-App kann das Projekt alternativ über **Neu bereitstellen** aktualisiert werden. Dabei muss **Das neuste Image abrufen** aktiviert sein.
+In der UGOS-Docker-App: **Neu bereitstellen** und **Das neuste Image abrufen** aktivieren. Die vorhandene `.env` und der Ordner `data/` bleiben erhalten.
 
-## Hinweis
+## English
 
-Dies ist eine Community-Lösung und kein offizielles Produkt von Schulmanager oder UGREEN.
+This security update refreshes the Node.js runtime and removes two unused GStreamer packages from the Docker image.
 
-Die Nutzung erfolgt auf eigene Verantwortung.
+- Publication now requires **Node.js 24.22.1 or later within Node 24**, rejecting older runtimes affected by the October 2026 security issues.
+- `gstreamer1.0-plugins-bad` and `libgstreamer-plugins-bad1.0-0` are removed because of **CVE-2025-3887**. They are inherited WebKit dependencies; the watcher uses Chromium.
+- Native AMD64 and ARM64 runners check the Node version, removed packages and Chromium startup with a local test page, alongside the existing syntax, mail compatibility and Trivy checks. Both verify the same image archive; publication requires matching verification receipts from both platforms.
+
+Homework collection, scheduling, email delivery and existing data retain their previous behavior. Playwright and Chromium remain at their existing versions.
+
+To update, run the commands above in the existing project directory, or redeploy through the UGOS Docker app with the latest-image download enabled. Keep your `.env` and `data/` directory.
+
+## Docker
+
+`railsimulatornet/schulmanager-homework-watcher:2.0.6`
+
+Platforms: `linux/amd64`, `linux/arm64`. Additional tags: `2.0`, `latest` and the publication date.
+
+## References
+
+- [Node.js 24.22.1 security release](https://nodejs.org/en/blog/release/v24.22.1/)
+- [Ubuntu: CVE-2025-3887](https://ubuntu.com/security/CVE-2025-3887)

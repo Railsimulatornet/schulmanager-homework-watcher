@@ -15,8 +15,10 @@ env:
   DOCKERHUB_IMAGE: railsimulatornet/schulmanager-homework-watcher
 
 jobs:
-  docker:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      tags: ${{ steps.meta.outputs.tags }}
 
     steps:
       - name: Checkout repository
@@ -82,21 +84,92 @@ jobs:
           provenance: mode=max
           sbom: true
 
-      - name: Verify both candidate platforms
-        run: bash .github/scripts/verify-image.sh "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results"
+      - name: Upload candidate archive
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-candidate
+          path: ${{ runner.temp }}/schulmanager/image.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+  verify:
+    needs: build
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends skopeo
+
+      - name: Download candidate archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: image-candidate
+          path: ${{ runner.temp }}/schulmanager
+
+      - name: Verify candidate on its native architecture
+        run: bash .github/scripts/verify-image.sh "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results" "${{ matrix.arch }}"
 
       - name: Upload Trivy reports
         if: always() && hashFiles('trivy-results/**') != ''
         uses: actions/upload-artifact@v7
         with:
-          name: trivy-results
-          path: trivy-results/
+          name: trivy-results-${{ matrix.arch }}
+          path: trivy-results/${{ matrix.arch }}/
+          if-no-files-found: error
+
+  publish:
+    needs: [build, verify]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install publication tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends skopeo
+
+      - name: Download candidate archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: image-candidate
+          path: ${{ runner.temp }}/schulmanager
+
+      - name: Download AMD64 verification
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: trivy-results-amd64
+          path: trivy-results/amd64
+
+      - name: Download ARM64 verification
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: trivy-results-arm64
+          path: trivy-results/arm64
+
+      - name: Require both platform receipts for this archive
+        run: bash .github/scripts/finalize-verification.sh "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results"
 
       - name: Publish verified Docker image
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
-          TAGS: ${{ steps.meta.outputs.tags }}
+          TAGS: ${{ needs.build.outputs.tags }}
         run: |
           bash .github/scripts/publish-image.sh \
             "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results/verified.sha256" "$TAGS"
