@@ -10,6 +10,7 @@ import unittest
 import test_scan_gate as fixtures
 
 SCRIPT = Path(__file__).with_name('verify-image.sh')
+FINALIZE = Path(__file__).with_name('finalize-verification.sh')
 SKOPEO_PREFIX = r'''#!/usr/bin/env python3
 import hashlib, json, os, pathlib, sys
 a = sys.argv[1:]
@@ -47,6 +48,10 @@ a = sys.argv[1:]
 mode = os.environ['SCENARIO']
 def log():
     with open(os.environ['CALLS'], 'a') as out: out.write(json.dumps(a) + '\n')
+if a[0] == 'info':
+    log()
+    print('s390x' if mode == 'unknown-host' else 'arm64' if mode == 'wrong-host' else os.environ['NATIVE_ARCH'])
+    sys.exit(0)
 if a[0] == 'pull':
     log()
     sys.exit(9 if mode == 'scanner-pull-failure' else 0)
@@ -104,9 +109,22 @@ class VerificationTests(unittest.TestCase):
                 'SOURCE_DIR': str(sources), 'ARCHIVE': str(archive),
                 'TRIVY_CACHE_DIR': str(root / 'cache'),
             }
-            result = subprocess.run(
-                ['bash', str(SCRIPT), str(archive), str(root / 'reports')],
-                env=env, capture_output=True, text=True, timeout=30)
+            results = []
+            for arch in ('amd64', 'arm64'):
+                result = subprocess.run(
+                    ['bash', str(SCRIPT), str(archive), str(root / 'reports'), arch],
+                    env=env | {'NATIVE_ARCH': arch}, capture_output=True, text=True, timeout=30)
+                results.append(result)
+                if result.returncode:
+                    break
+            if result.returncode == 0:
+                result = subprocess.run(
+                    ['bash', str(FINALIZE), str(archive), str(root / 'reports')],
+                    env=env, capture_output=True, text=True, timeout=30)
+                results.append(result)
+            result = subprocess.CompletedProcess(
+                result.args, result.returncode,
+                ''.join(item.stdout for item in results), ''.join(item.stderr for item in results))
             calls = [json.loads(x) for x in (root / 'calls').read_text().splitlines()] if (root / 'calls').exists() else []
             stamp = root / 'reports' / 'verified.sha256'
             verified = stamp.read_text().strip() if stamp.exists() else None
@@ -131,6 +149,7 @@ class VerificationTests(unittest.TestCase):
             'transport-failure', 'changed-transport', 'scanner-pull-failure',
             'scan-error', 'findings', 'eol', 'wrong-runtime-image',
             'smoke-amd64-failure', 'smoke-arm64-failure', 'archive-changed',
+            'wrong-host', 'unknown-host',
         ):
             with self.subTest(scenario=scenario):
                 result, _, verified, _ = self.run_case(scenario)
@@ -142,6 +161,35 @@ class VerificationTests(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn('SyntaxError', result.stderr)
         self.assertIsNone(verified)
+
+    def test_receipts_from_both_architectures_must_match_current_archive(self):
+        for scenario in ('clean', 'missing-amd64', 'missing-arm64', 'mismatch-amd64',
+                         'mismatch-arm64', 'malformed-arm64', 'changed-archive'):
+            with self.subTest(scenario=scenario), tempfile.TemporaryDirectory() as tmp:
+                root = Path(tmp)
+                archive = root / 'image.tar'
+                archive.write_bytes(b'verified multiarch archive')
+                digest = hashlib.sha256(archive.read_bytes()).hexdigest()
+                reports = root / 'reports'
+                for arch in ('amd64', 'arm64'):
+                    (reports / arch).mkdir(parents=True)
+                    if scenario != 'missing-' + arch:
+                        value = '0' * 64 if scenario == 'mismatch-' + arch else digest
+                        if scenario == 'malformed-' + arch:
+                            value += '\nextra receipt'
+                        (reports / arch / 'verified.sha256').write_text(value + '\n')
+                if scenario == 'changed-archive':
+                    archive.write_bytes(b'different archive')
+                result = subprocess.run(
+                    ['bash', str(FINALIZE), str(archive), str(reports)],
+                    capture_output=True, text=True, timeout=10)
+                stamp = reports / 'verified.sha256'
+                if scenario == 'clean':
+                    self.assertEqual(result.returncode, 0, result.stderr)
+                    self.assertEqual(stamp.read_text().strip(), digest)
+                else:
+                    self.assertNotEqual(result.returncode, 0)
+                    self.assertFalse(stamp.exists())
 
     def test_original_find_command_did_not_propagate_syntax_failure(self):
         with tempfile.TemporaryDirectory() as tmp:

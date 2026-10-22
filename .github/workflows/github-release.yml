@@ -14,8 +14,15 @@ env:
   DOCKERHUB_IMAGE: railsimulatornet/schulmanager-homework-watcher
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      minor: ${{ steps.release.outputs.minor }}
+      date_tag: ${{ steps.release.outputs.date_tag }}
+      title: ${{ steps.release.outputs.title }}
+      exists: ${{ steps.release.outputs.exists }}
 
     steps:
       - name: Checkout repository
@@ -107,39 +114,112 @@ jobs:
           provenance: mode=max
           sbom: true
 
-      - name: Verify both candidate platforms
+      - name: Upload candidate archive
         if: steps.release.outputs.exists != 'true'
-        run: bash .github/scripts/verify-image.sh "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results"
+        uses: actions/upload-artifact@v7
+        with:
+          name: image-candidate
+          path: ${{ runner.temp }}/schulmanager/image.tar
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 1
+
+  verify:
+    needs: build
+    if: needs.build.outputs.exists != 'true'
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: amd64
+            runner: ubuntu-24.04
+          - arch: arm64
+            runner: ubuntu-24.04-arm
+    runs-on: ${{ matrix.runner }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          persist-credentials: false
+
+      - name: Install verification tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends skopeo
+
+      - name: Download candidate archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: image-candidate
+          path: ${{ runner.temp }}/schulmanager
+
+      - name: Verify candidate on its native architecture
+        run: bash .github/scripts/verify-image.sh "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results" "${{ matrix.arch }}"
 
       - name: Upload Trivy reports
         if: always() && hashFiles('trivy-results/**') != ''
         uses: actions/upload-artifact@v7
         with:
-          name: trivy-results
-          path: trivy-results/
+          name: trivy-results-${{ matrix.arch }}
+          path: trivy-results/${{ matrix.arch }}/
+          if-no-files-found: error
+
+  release:
+    needs: [build, verify]
+    if: needs.build.outputs.exists != 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Install publication tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes --no-install-recommends skopeo
+
+      - name: Download candidate archive
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: image-candidate
+          path: ${{ runner.temp }}/schulmanager
+
+      - name: Download AMD64 verification
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: trivy-results-amd64
+          path: trivy-results/amd64
+
+      - name: Download ARM64 verification
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: trivy-results-arm64
+          path: trivy-results/arm64
+
+      - name: Require both platform receipts for this archive
+        run: bash .github/scripts/finalize-verification.sh "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results"
 
       - name: Publish verified multi-arch Docker image
-        if: steps.release.outputs.exists != 'true'
         env:
           DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
           DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
           TAGS: |
-            ${{ env.DOCKERHUB_IMAGE }}:${{ steps.release.outputs.version }}
-            ${{ env.DOCKERHUB_IMAGE }}:${{ steps.release.outputs.minor }}
+            ${{ env.DOCKERHUB_IMAGE }}:${{ needs.build.outputs.version }}
+            ${{ env.DOCKERHUB_IMAGE }}:${{ needs.build.outputs.minor }}
             ${{ env.DOCKERHUB_IMAGE }}:latest
-            ${{ env.DOCKERHUB_IMAGE }}:${{ steps.release.outputs.date_tag }}
+            ${{ env.DOCKERHUB_IMAGE }}:${{ needs.build.outputs.date_tag }}
         run: |
           bash .github/scripts/publish-image.sh \
             "$RUNNER_TEMP/schulmanager/image.tar" "$PWD/trivy-results/verified.sha256" "$TAGS"
 
       - name: Prepare release assets
-        if: steps.release.outputs.exists != 'true'
         id: assets
         shell: bash
         run: |
           set -euo pipefail
 
-          ZIP="${RUNNER_TEMP}/schulmanager-homework-watcher_v${{ steps.release.outputs.version }}.zip"
+          ZIP="${RUNNER_TEMP}/schulmanager-homework-watcher_v${{ needs.build.outputs.version }}.zip"
           PDF="${RUNNER_TEMP}/Schulmanager-Homework-Watcher_Handbuch_DE.pdf"
 
           git archive \
@@ -157,14 +237,13 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create GitHub release
-        if: steps.release.outputs.exists != 'true'
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create \
-            "${{ steps.release.outputs.tag }}" \
+            "${{ needs.build.outputs.tag }}" \
             "${{ steps.assets.outputs.zip }}" \
             "${{ steps.assets.outputs.pdf }}" \
             --target "${GITHUB_SHA}" \
-            --title "${{ steps.release.outputs.title }}" \
+            --title "${{ needs.build.outputs.title }}" \
             --notes-file .github/release-notes.md
