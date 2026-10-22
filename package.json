@@ -1,12 +1,14 @@
 {
   "name": "schulmanager-homework-watcher",
-  "version": "2.0.6",
-  "description": "Schulmanager-Abruf für Hausaufgaben mit First-Seen-Nachweis und Mailversand",
+  "version": "3.0.1",
+  "description": "Modularer Schulmanager-Watcher mit Änderungsnachweisen und getrennten Benachrichtigungen",
   "main": "src/scheduler.js",
   "scripts": {
     "start": "node src/scheduler.js",
     "once": "node src/run-once.js",
-    "login": "node src/login.js"
+    "login": "node src/login.js",
+    "test": "node --test test/*.test.js",
+    "test-mail": "node src/test-mail.js"
   },
   "dependencies": {
     "dotenv": "18.0.7",

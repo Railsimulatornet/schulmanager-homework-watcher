@@ -20,6 +20,12 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Test watcher source
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test
+
       - name: Check publication helpers
         run: |
           set -euo pipefail

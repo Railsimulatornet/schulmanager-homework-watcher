@@ -2,7 +2,7 @@ const fs = require('fs');
 const path = require('path');
 const dotenv = require('dotenv');
 
-dotenv.config();
+dotenv.config({ quiet: true });
 
 function readMaybeFile(value, filePath) {
   if (value && String(value).trim() !== '') {
@@ -49,16 +49,33 @@ const config = {
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36',
   headless: toBoolean(process.env.HEADLESS, true),
   playwrightTimeoutMs: toNumber(process.env.PW_TIMEOUT_MS, 45000),
-  cronSchedule: process.env.CRON_SCHEDULE || '0,30 6-21 * * *',
+  cronSchedule: process.env.CRON_SCHEDULE || '*/5 6-22 * * *',
   runOnStart: toBoolean(process.env.RUN_ON_START, true),
   retentionDays: Math.max(1, toNumber(process.env.RETENTION_DAYS, 31)),
   onlyCurrentWeek: toBoolean(process.env.ONLY_CURRENT_WEEK, false),
   lookbackDays: Math.max(0, toNumber(process.env.HOMEWORK_LOOKBACK_DAYS, 10)),
   lookaheadDays: Math.max(0, toNumber(process.env.HOMEWORK_LOOKAHEAD_DAYS, 7)),
+  errorCooldownMinutes: Math.max(30, toNumber(process.env.ERROR_MAIL_COOLDOWN_MINUTES, 360)),
+  watch: {
+    homework: toBoolean(process.env.WATCH_HOMEWORK, true),
+    absences: toBoolean(process.env.WATCH_ABSENCES, true),
+    entries: toBoolean(process.env.WATCH_ENTRIES, true),
+    history: toBoolean(process.env.WATCH_HISTORY, true),
+    exams: toBoolean(process.env.WATCH_EXAMS, true),
+    timetable: toBoolean(process.env.WATCH_TIMETABLE, true)
+  },
   mail: {
     enabled: toBoolean(process.env.MAIL_ENABLED, false),
     mode: process.env.MAIL_MODE || 'changes',
     onError: toBoolean(process.env.MAIL_ON_ERROR, true),
+    categories: {
+      homework: toBoolean(process.env.MAIL_HOMEWORK, true),
+      absences: toBoolean(process.env.MAIL_ABSENCES, true),
+      entries: toBoolean(process.env.MAIL_ENTRIES, true),
+      history: toBoolean(process.env.MAIL_HISTORY, false),
+      exams: toBoolean(process.env.MAIL_EXAMS, true),
+      timetable: toBoolean(process.env.MAIL_TIMETABLE, true)
+    },
     host: process.env.SMTP_HOST || '',
     port: toNumber(process.env.SMTP_PORT, 587),
     secure: toBoolean(process.env.SMTP_SECURE, false),

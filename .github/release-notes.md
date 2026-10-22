@@ -12,6 +12,8 @@ Mit v3.0.1 kommt jetzt auch die größere Erweiterung, die ich bereits im Alltag
 
 **Wichtig beim Update:** Vorher `.env` und den kompletten Ordner `data/` sichern und beibehalten. Die neuen `WATCH_*`- und `MAIL_*`-Einstellungen stehen in der [Beispielkonfiguration](https://github.com/Railsimulatornet/schulmanager-homework-watcher/blob/v3.0.1/.env.example). Der erste erfolgreiche Abruf eines neu aktivierten Bereichs erstellt zunächst einen Ausgangsstand, ohne eine Änderungsmail zu senden.
 
+Beim Wechsel von v2 bitte auch die Schreibrechte von `data/` für UID 1001/GID 10 prüfen.
+
 Docker-Images für AMD64 und ARM64. Beide Plattformen werden vor der Veröffentlichung mit Chromium- und Sicherheitstests geprüft.
 
 ## English
@@ -25,5 +27,7 @@ Version 3.0.1 includes the larger extension I've already been testing in everyda
 • The security fixes from v2.0.6 are included, notably Node.js 24.22.1 and removal of the unused GStreamer packages.
 
 **Before updating:** Back up and keep your `.env` and entire `data/` directory. The new `WATCH_*` and `MAIL_*` options are in the [example configuration](https://github.com/Railsimulatornet/schulmanager-homework-watcher/blob/v3.0.1/.env.example). The first successful check of a newly enabled area creates a baseline without sending a change notification.
+
+When upgrading from v2, also check that `data/` is writable by UID 1001/GID 10.
 
 Docker images are available for AMD64 and ARM64. Both platforms undergo Chromium and security checks before publication.

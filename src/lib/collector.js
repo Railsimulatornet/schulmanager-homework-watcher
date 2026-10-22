@@ -1,6 +1,6 @@
 const path = require('path');
 const { normalizeItem } = require('./homework');
-const { readJson, writeJson, writeText, ensureDir } = require('./files');
+const { readJson, writeJson, ensureDir } = require('./files');
 
 function createTimeoutController(timeoutMs) {
   const controller = new AbortController();
@@ -14,7 +14,7 @@ function createTimeoutController(timeoutMs) {
 async function fetchJson(url, options = {}, timeoutMs = 45000) {
   const { signal, clear } = createTimeoutController(timeoutMs);
   try {
-    const response = await fetch(url, { ...options, signal });
+    const response = await fetch(url, { ...options, redirect: 'error', signal });
     const text = await response.text();
     let json = null;
     try {
@@ -29,11 +29,10 @@ async function fetchJson(url, options = {}, timeoutMs = 45000) {
 }
 
 function sanitizeLoginResponse(payload) {
-  if (!payload || typeof payload !== 'object') return payload;
   return {
-    user: payload.user || null,
-    jwtPresent: Boolean(payload.jwt),
-    jwtLength: payload.jwt ? String(payload.jwt).length : 0
+    responsePresent: Boolean(payload && typeof payload === 'object'),
+    userPresent: Boolean(payload?.user),
+    jwtPresent: Boolean(payload?.jwt)
   };
 }
 
@@ -183,7 +182,7 @@ async function login(config) {
   }, config.playwrightTimeoutMs);
 
   if (!saltResult.response.ok) {
-    throw new Error(`Salt-Abruf fehlgeschlagen (HTTP ${saltResult.response.status}).`);
+    throw Object.assign(new Error(`Salt-Abruf fehlgeschlagen (HTTP ${saltResult.response.status}).`), { httpStatus:saltResult.response.status });
   }
 
   const loginResult = await fetchJson(`${config.baseUrl}/api/login`, {
@@ -207,12 +206,11 @@ async function login(config) {
   writeJson(path.join(config.logsDir, 'login-response-sanitized.json'), sanitizeLoginResponse(loginResult.json));
 
   if (!loginResult.response.ok) {
-    throw new Error(`Login fehlgeschlagen (HTTP ${loginResult.response.status}).`);
+    throw Object.assign(new Error(`Login fehlgeschlagen (HTTP ${loginResult.response.status}).`), { httpStatus:loginResult.response.status });
   }
 
   if (!loginResult.json?.jwt) {
-    writeText(path.join(config.logsDir, 'login-response-raw.txt'), loginResult.text || '');
-    throw new Error('Login-Antwort enthält kein JWT. Die Rohantwort wurde unter data/logs/login-response-raw.txt gespeichert.');
+    throw new Error('Login-Antwort enthält kein JWT. Es wurden keine Antwortinhalte protokolliert.');
   }
 
   const studentId = deriveStudentId(loginResult.json, config);
@@ -251,10 +249,14 @@ async function requestHomework(config, token, studentId, bundleVersion) {
     body: JSON.stringify(body)
   }, config.playwrightTimeoutMs);
 
-  writeJson(path.join(config.logsDir, 'homework-api-response.json'), result.json || { rawText: result.text || '' });
+  writeJson(path.join(config.logsDir, 'homework-api-response.json'), {
+    httpStatus: result.response.status,
+    resultStatus: result.json?.results?.[0]?.status ?? null,
+    itemCount: Array.isArray(result.json?.results?.[0]?.data) ? result.json.results[0].data.length : null
+  });
 
   if (!result.response.ok) {
-    throw new Error(`Hausaufgaben-Abruf fehlgeschlagen (HTTP ${result.response.status}).`);
+    throw Object.assign(new Error(`Hausaufgaben-Abruf fehlgeschlagen (HTTP ${result.response.status}).`), { httpStatus:result.response.status });
   }
 
   return result.json;
@@ -267,28 +269,81 @@ function extractHomeworkItems(apiResponse) {
   }
 
   if (result.status !== 200) {
-    throw new Error(`get-homework lieferte Status ${result.status}. Details siehe data/logs/homework-api-response.json`);
+    throw Object.assign(new Error(`Hausaufgaben-Abruf lieferte Status ${result.status}.`), { httpStatus:result.status });
   }
 
-  const data = Array.isArray(result.data) ? result.data : [];
+  if (!Array.isArray(result.data)) throw new Error('Hausaufgaben-Antwort enthält keine gültige Liste.');
+  const data = result.data;
+  if (data.some(item => !item || typeof item.date !== 'string' || !/^\d{4}-\d{2}-\d{2}/.test(item.date) || typeof item.subject !== 'string' || typeof item.homework !== 'string')) {
+    throw new Error('Hausaufgaben-Antwort enthält unvollständige Datensätze.');
+  }
   return data.map(normalizeItem);
 }
 
-async function collectHomework(config) {
+async function createSession(config) {
+  const url = new URL(config.baseUrl);
+  if (url.protocol !== 'https:' || url.username || url.password || url.search || url.hash) {
+    throw new Error('Die Schulmanager-Adresse muss eine HTTPS-Adresse ohne Zugangsdaten sein.');
+  }
   ensureDir(config.logsDir);
-
   const auth = await login(config);
-  let bundleInfo = await resolveBundleVersion(config);
+  const bundleInfo = await resolveBundleVersion(config);
+  return { ...auth, bundleInfo, bundleRefreshed: false };
+}
 
-  let apiResponse = await requestHomework(config, auth.token, auth.studentId, bundleInfo.version);
+async function callEndpoint(config, session, moduleName, endpointName, parameters = {}) {
+  async function request() {
+    const body = { bundleVersion: session.bundleInfo.version, requests: [{ moduleName, endpointName, parameters }] };
+    const result = await fetchJson(`${config.baseUrl}/api/calls`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.token}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json, text/plain, */*',
+        'Origin': config.baseUrl,
+        'Referer': `${config.baseUrl}/`,
+        'User-Agent': config.userAgent
+      },
+      body: JSON.stringify(body)
+    }, config.playwrightTimeoutMs);
+    if (!result.response.ok) {
+      const error = new Error(`API-Abruf fehlgeschlagen (HTTP ${result.response.status}).`);
+      error.httpStatus = result.response.status;
+      throw error;
+    }
+    return result.json?.results?.[0] || null;
+  }
+
+  let result = await request();
+  if (result?.status !== 200 && ![401,403,429,503].includes(result?.status) && !session.bundleRefreshed) {
+    session.bundleRefreshed = true;
+    const refreshed = await discoverBundleVersion(config);
+    writeJson(path.join(config.stateDir, 'bundle-version.json'), refreshed);
+    session.bundleInfo = refreshed;
+    result = await request();
+  }
+  if (!result || result.status !== 200 || !Object.prototype.hasOwnProperty.call(result, 'data')) {
+    const error = new Error(`API-Bereich ${moduleName || 'allgemein'}/${endpointName} lieferte keinen gültigen Datensatz (Status ${result?.status ?? 'unbekannt'}).`);
+    error.httpStatus = result?.status || 0;
+    throw error;
+  }
+  return result.data;
+}
+
+async function collectHomeworkWithSession(config, session) {
+  let bundleInfo = session.bundleInfo;
+
+  let apiResponse = await requestHomework(config, session.token, session.studentId, bundleInfo.version);
   let resultStatus = apiResponse?.results?.[0]?.status;
 
-  if (resultStatus && resultStatus !== 200) {
+  if (resultStatus && resultStatus !== 200 && ![401,403,429,503].includes(resultStatus)) {
     const cachePath = path.join(config.stateDir, 'bundle-version.json');
     const refreshed = await discoverBundleVersion(config);
     writeJson(cachePath, refreshed);
     bundleInfo = refreshed;
-    apiResponse = await requestHomework(config, auth.token, auth.studentId, bundleInfo.version);
+    session.bundleInfo = refreshed;
+    session.bundleRefreshed = true;
+    apiResponse = await requestHomework(config, session.token, session.studentId, bundleInfo.version);
     resultStatus = apiResponse?.results?.[0]?.status;
   }
 
@@ -298,14 +353,18 @@ async function collectHomework(config) {
     source: {
       method: 'direct-api',
       url: `${config.baseUrl}/api/calls`,
-      studentId: auth.studentId,
+      studentId: session.studentId,
       bundleVersion: bundleInfo.version,
       bundleDiscoveredFrom: bundleInfo.discoveredFrom || null,
-      userId: auth.user?.id || null
+      userId: session.user?.id || null
     },
     responseStatus: resultStatus || 200,
     items
   };
 }
 
-module.exports = { collectHomework };
+async function collectHomework(config) {
+  return collectHomeworkWithSession(config, await createSession(config));
+}
+
+module.exports = { collectHomework, createSession, callEndpoint, collectHomeworkWithSession };

@@ -93,7 +93,8 @@ function diffItems(previousItems, currentItems) {
 }
 
 function escapeCsv(value) {
-  const text = String(value ?? '');
+  let text = String(value ?? '');
+  if (/^[\s]*[=+@-]/.test(text)) text = `'${text}`;
   if (/[",\n]/.test(text)) {
     return `"${text.replace(/"/g, '""')}"`;
   }

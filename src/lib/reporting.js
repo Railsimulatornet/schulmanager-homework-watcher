@@ -37,7 +37,10 @@ function rel(config, absPath) {
 }
 
 function abs(config, relativePath) {
-  return relativePath ? path.join(config.dataDir, relativePath) : null;
+  if (!relativePath) return null;
+  const target = path.resolve(config.dataDir, relativePath);
+  if (!target.startsWith(path.resolve(config.dataDir) + path.sep)) throw new Error('Ungültiger Snapshot-Pfad.');
+  return target;
 }
 
 function snapshotFilePath(config, capturedAt) {
@@ -239,7 +242,7 @@ function rotateFiles(config, nowIso) {
   }
 }
 
-function prepareArtifacts(config, capture, items) {
+function prepareArtifacts(config, capture, items, beforeCommit) {
   const state = loadState(config);
   const previousSnapshotPath = abs(config, state.lastSnapshotRelativePath);
   const previousSnapshot = previousSnapshotPath ? readJson(previousSnapshotPath, null) : null;
@@ -253,6 +256,7 @@ function prepareArtifacts(config, capture, items) {
   const previousRelativePath = state.lastSnapshotRelativePath || null;
 
   const snapshot = {
+    previousSnapshot: previousRelativePath,
     capturedAt,
     timezone: config.timezone,
     week: {
@@ -262,8 +266,8 @@ function prepareArtifacts(config, capture, items) {
       end: currentWeek.end.toISODate()
     },
     range: {
-      start: monitored.start.toISODate(),
-      end: monitored.end.toISODate(),
+      start: (config.onlyCurrentWeek ? currentWeek.start : monitored.start).toISODate(),
+      end: (config.onlyCurrentWeek ? currentWeek.end : monitored.end).toISODate(),
       lookbackDays: config.lookbackDays,
       lookaheadDays: config.lookaheadDays
     },
@@ -278,7 +282,7 @@ function prepareArtifacts(config, capture, items) {
 
   writeJson(snapshotPath, snapshot);
 
-  const previousItems = previousSnapshot?.items || [];
+  const previousItems = (previousSnapshot?.items || []).filter(item => item.date >= snapshot.range.start && item.date <= snapshot.range.end);
   const diff = diffItems(previousItems, items);
 
   const nextState = state;
@@ -301,8 +305,6 @@ function prepareArtifacts(config, capture, items) {
   }
 
   pruneState(config, nextState, capturedAt);
-  saveState(config, nextState);
-  rotateFiles(config, capturedAt);
 
   const summaryRows = buildSummaryRows(config, items, nextState);
   const evidencePath = path.join(config.reportsDir, 'latest-evidence.md');
@@ -323,7 +325,7 @@ function prepareArtifacts(config, capture, items) {
   writeText(summaryCsvPath, buildCsv(summaryRows));
   writeJson(summaryJsonPath, summaryRows);
 
-  return {
+  const result = {
     snapshot,
     diff,
     summaryRows,
@@ -338,6 +340,10 @@ function prepareArtifacts(config, capture, items) {
       summaryJsonRelativePath: rel(config, summaryJsonPath)
     }
   };
+  if (beforeCommit) beforeCommit(result);
+  saveState(config, nextState);
+  rotateFiles(config, capturedAt);
+  return result;
 }
 
 module.exports = {
