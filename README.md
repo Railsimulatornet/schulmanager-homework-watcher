@@ -151,7 +151,9 @@ Der vorhandene UGOS-Projektname kann vom Ordnernamen abweichen. Verwende bei SSH
 railsimulatornet/schulmanager-homework-watcher:latest
 ```
 
-Anwendungsversion: **2.0.5**. Releases erhalten zusätzlich Versions- und Datumstags. Die Veröffentlichung prüft AMD64 und ARM64 einschließlich Laufzeit- und Trivy-Tests und überträgt anschließend dieselben geprüften Images. SBOM- und Provenance-Attestierungen gehören zum Build.
+Anwendungsversion: **2.0.6**. Releases erhalten zusätzlich Versions- und Datumstags. Die Veröffentlichung prüft AMD64 und ARM64 einschließlich Laufzeit- und Trivy-Tests und überträgt anschließend dieselben geprüften Images. SBOM- und Provenance-Attestierungen gehören zum Build.
+
+Die Laufzeitprüfung verlangt mindestens Node.js **24.22.1** innerhalb der Node-24-Reihe und prüft den Chromium-Start. Zwei ungenutzte WebKit-Codecpakete werden wegen CVE-2025-3887 aus dem Image entfernt und vor jeder Veröffentlichung auf Abwesenheit geprüft.
 
 Der wöchentliche Wartungslauf aktualisiert nach bestandener Prüfung nur `latest`. Die Versions-Tags werden durch diesen Wochenlauf nicht verändert. Behebbare HIGH- oder CRITICAL-Funde und Scanfehler verhindern die Veröffentlichung.
 
@@ -352,7 +354,9 @@ The existing UGOS project name may differ from the directory name. For SSH comma
 railsimulatornet/schulmanager-homework-watcher:latest
 ```
 
-Application version: **2.0.5**. Releases also receive version and date tags. The publication process checks AMD64 and ARM64, including runtime and Trivy tests, and then transfers the same verified images. Builds include SBOM and provenance attestations.
+Application version: **2.0.6**. Releases also receive version and date tags. The publication process checks AMD64 and ARM64, including runtime and Trivy tests, and then transfers the same verified images. Builds include SBOM and provenance attestations.
+
+Runtime checks require Node.js **24.22.1 or later within Node 24** and test Chromium startup. Two unused WebKit codec packages are removed from the image because of CVE-2025-3887, and their absence is checked before every publication.
 
 After successful checks, the weekly maintenance run updates only `latest`. It does not change version tags. Fixable HIGH or CRITICAL findings and scan errors block publication.
 

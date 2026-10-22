@@ -1,5 +1,19 @@
 # Changelog
 
+## v2.0.6 - 2026-10-22
+
+### Sicherheit und Wartung
+
+- Docker-Image mit aktualisierter Node.js-24-Laufzeit neu gebaut; die Veröffentlichung verlangt mindestens `24.22.1` für die Sicherheitskorrekturen vom Oktober 2026.
+- Die ungenutzten WebKit-Pakete `gstreamer1.0-plugins-bad` und `libgstreamer-plugins-bad1.0-0` wegen `CVE-2025-3887` entfernt. Chromium bleibt erhalten.
+- Die Laufzeitprüfung kontrolliert die Node-Mindestversion und die entfernten Pakete auf AMD64 und ARM64 unabhängig von der Trivy-Datenbank.
+- Chromium wird mit einem temporären Profil und einer lokalen Testseite auf Start, Formulareingabe und Darstellung geprüft.
+- Regressionstests für die Node-Versionsgrenze und beide betroffenen GStreamer-Pakete ergänzt.
+
+### Funktion
+
+- Keine Änderungen an Hausaufgabenabruf, Zeitplan, Mailversand oder gespeicherten Daten.
+
 ## v2.0.5 - 2026-09-27
 
 ### Sicherheit und Wartung

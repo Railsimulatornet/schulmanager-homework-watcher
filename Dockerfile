@@ -5,8 +5,12 @@ WORKDIR /app
 ENV NODE_ENV=production \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
 
-# Install all currently available Ubuntu security updates from the pinned base image.
+# Only Chromium is used. Remove unused WebKit codecs affected by CVE-2025-3887;
+# do not autoremove libraries needed by the browsers installed outside APT.
+# Refresh Ubuntu packages and the base image's NodeSource Node.js 24 runtime.
 RUN apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y purge \
+        gstreamer1.0-plugins-bad libgstreamer-plugins-bad1.0-0 \
     && DEBIAN_FRONTEND=noninteractive apt-get -y dist-upgrade \
     && rm -rf /var/lib/apt/lists/*
 
