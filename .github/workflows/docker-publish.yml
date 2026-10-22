@@ -26,6 +26,9 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Prepare disk space for multi-arch build
+        run: bash .github/scripts/prepare-runner.sh
+
       - name: Test watcher source
         run: |
           set -euo pipefail
