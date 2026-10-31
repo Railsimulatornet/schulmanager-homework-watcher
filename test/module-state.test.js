@@ -6,6 +6,9 @@ const path = require('path');
 const { processModule } = require('../src/lib/module-state');
 
 function setup(t) {
+  // Die Tests verwenden historische Abrufzeiten. Auch die Aufbewahrungsprüfung
+  // muss dieselbe Uhrzeit verwenden, statt die tatsächliche CI-Uhr abzufragen.
+  t.mock.method(Date, 'now', () => Date.parse('2026-09-30T10:15:00+02:00'));
   const dataDir = fs.mkdtempSync(path.join(os.tmpdir(), 'schulmanager-test-'));
   t.after(() => fs.rmSync(dataDir, { recursive: true, force: true }));
   return { dataDir, retentionDays: 31 };
