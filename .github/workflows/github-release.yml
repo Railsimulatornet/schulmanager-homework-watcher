@@ -30,15 +30,6 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Prepare disk space for multi-arch build
-        run: bash .github/scripts/prepare-runner.sh
-
-      - name: Test watcher source
-        run: |
-          set -euo pipefail
-          npm ci --ignore-scripts --no-audit --no-fund
-          npm test
-
       - name: Read release metadata
         id: release
         shell: bash
@@ -83,6 +74,17 @@ jobs:
             echo "title=${TITLE}"
             echo "exists=${EXISTS}"
           } >> "$GITHUB_OUTPUT"
+
+      - name: Prepare disk space for multi-arch build
+        if: steps.release.outputs.exists != 'true'
+        run: bash .github/scripts/prepare-runner.sh
+
+      - name: Test watcher source
+        if: steps.release.outputs.exists != 'true'
+        run: |
+          set -euo pipefail
+          npm ci --ignore-scripts --no-audit --no-fund
+          npm test
 
       - name: Check publication helpers
         if: steps.release.outputs.exists != 'true'
