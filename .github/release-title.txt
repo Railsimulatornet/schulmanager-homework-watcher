@@ -1,1 +1,1 @@
-v3.0.1 – Mehr Schulmanager-Bereiche und getrennte Benachrichtigungen
+v3.0.2 – Kleines Wartungsupdate für den Mailversand
