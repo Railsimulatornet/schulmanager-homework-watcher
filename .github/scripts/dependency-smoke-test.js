@@ -8,8 +8,8 @@ function assertSupportedNode(version = process.versions.node) {
   const match = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/.exec(version);
   const parts = match ? match.slice(1).map(Number) : [];
   assert(parts.length === 3 && parts.every(Number.isSafeInteger)
-    && parts[0] === 24 && (parts[1] > 22 || (parts[1] === 22 && parts[2] >= 1)),
-    `Node.js 24.22.1 or newer within Node 24 is required; found ${version}`);
+    && parts[0] === 26 && (parts[1] > 13 || (parts[1] === 13 && parts[2] >= 1)),
+    `Node.js 26.13.1 or newer within Node 26 is required; found ${version}`);
 }
 
 function assertUnusedCodecsAbsent(packageStatus) {

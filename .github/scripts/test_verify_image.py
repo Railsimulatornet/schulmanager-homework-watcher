@@ -65,6 +65,29 @@ if a[:2] == ['image', 'inspect']:
 if a[:2] == ['image', 'rm']:
     log()
     sys.exit(0)
+if a[0] == 'run' and '-d' in a:
+    log()
+    assert '--network' in a and a[a.index('--network') + 1] == 'none'
+    assert '--read-only' in a and 'RUN_ON_START=false' in a and 'MAIL_ENABLED=false' in a
+    if mode == 'scheduler-start-failure': sys.exit(9)
+    print('fixture-' + os.environ['NATIVE_ARCH'])
+    sys.exit(0)
+if a[0] == 'inspect':
+    log()
+    print('healthy' if 'Health.Status' in a[-2] else 'true')
+    sys.exit(0)
+if a[0] == 'exec':
+    log()
+    removed = pathlib.Path(os.environ['STATE'] + '.removed-' + os.environ['NATIVE_ARCH'])
+    if '-e' in a:
+        removed.write_text('removed')
+        sys.exit(0)
+    if mode == 'scheduler-probe-failure': sys.exit(9)
+    if mode == 'scheduler-state-ignored': sys.exit(0)
+    sys.exit(1 if removed.exists() else 0)
+if a[0] in ('rm', 'logs', 'kill'):
+    log()
+    sys.exit(0)
 if a[0] == 'run' and '--entrypoint' in a:
     log()
     arch = a[a.index('--platform') + 1].split('/')[1]
@@ -149,7 +172,8 @@ class VerificationTests(unittest.TestCase):
             'transport-failure', 'changed-transport', 'scanner-pull-failure',
             'scan-error', 'findings', 'eol', 'wrong-runtime-image',
             'smoke-amd64-failure', 'smoke-arm64-failure', 'archive-changed',
-            'wrong-host', 'unknown-host',
+            'wrong-host', 'unknown-host', 'scheduler-start-failure',
+            'scheduler-probe-failure', 'scheduler-state-ignored',
         ):
             with self.subTest(scenario=scenario):
                 result, _, verified, _ = self.run_case(scenario)

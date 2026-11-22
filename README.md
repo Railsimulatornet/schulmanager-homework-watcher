@@ -1,5 +1,14 @@
 # Schulmanager Homework Watcher
 
+## Automatische Pflege und Betriebsprüfung
+
+Die Beispielkonfiguration verwendet jetzt `railsimulatornet/schulmanager-homework-watcher:latest`. Dieser Kanal erhält nach geprüften Änderungen auf `main` sowie samstags um 03:41 UTC einen frischen Bau einschließlich aktualisierter Betriebssystempakete. AMD64 und ARM64 müssen die Quell-, Browser-, Betriebs- und Sicherheitsprüfungen bestehen, bevor genau das geprüfte Image veröffentlicht wird. Feste Versionstags wie `3.0.1` bleiben unverändert. Für eine sofortige Wiederholung kann im Ablauf **Container security scan** der manuelle Schalter „Geprüftes Image als latest veröffentlichen“ aktiviert werden; nur `main` darf veröffentlichen.
+
+Der neue Image-HEALTHCHECK prüft den registrierten nächsten Abruf, ein frisches Lebenszeichen des laufenden Schedulers und die Dauer eines aktiven Abrufs. Die Zustandsdatei liegt flüchtig in `/tmp`; alte Zustände eines vorherigen Prozesses werden abgewiesen. Eine Abrufpause über Nacht gilt als gesund. Ein hängender Scheduler, ein gestoppter Zeitplan oder ein über 30 Minuten laufender Abruf gilt als fehlerhaft. Die Grenze lässt sich mit `WATCHER_HEALTH_MAX_RUN_SECONDS` zwischen 60 und 3600 Sekunden einstellen.
+
+Diese Betriebsprüfung meldet die lokale Zeitplanung; sie bestätigt keine erfolgreiche Anmeldung beim entfernten Schulmanager und keinen Mailversand. Dafür bleiben die vorhandenen Fehlerberichte zuständig. Beim erstmaligen Wechsel von einem alten Image ohne Zustandsprüfung müssen das neue Image geprüft und der bestehende Dienst kontrolliert mit Rückfallmöglichkeit übernommen werden. Nur ein Image-Pull ändert keinen laufenden Container.
+
+
 [![Release + Docker Image](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/github-release.yml/badge.svg?branch=main)](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/github-release.yml)
 [![Security Scan](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/security-scan.yml/badge.svg?branch=main)](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/security-scan.yml)
 [![CodeQL](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/codeql.yml/badge.svg?branch=main)](https://github.com/Railsimulatornet/schulmanager-homework-watcher/actions/workflows/codeql.yml)
@@ -84,14 +93,14 @@ PROJECT=$(docker inspect "$CONTAINER" --format '{{index .Config.Labels "com.dock
 SERVICE=$(docker inspect "$CONTAINER" --format '{{index .Config.Labels "com.docker.compose.service"}}')
 COMPOSE=/volume2/docker/schulmanager-homework-watcher/docker-compose.yaml
 # Erst nach erfolgreicher Veröffentlichung und Sicherung von .env und data/ ausführen.
-# In der bestehenden Compose-Datei den Image-Tag auf 3.0.1 setzen; Projekt,
+# In der bestehenden Compose-Datei den freigegebenen Image-Kanal latest setzen; Projekt,
 # Service-Namen, Umgebungswerte und Datenpfade nicht durch eine Vorlage ersetzen.
 test -n "$PROJECT" && test -n "$SERVICE" && test -f "$COMPOSE" || exit 1
 docker compose -p "$PROJECT" -f "$COMPOSE" pull "$SERVICE"
 docker compose -p "$PROJECT" -f "$COMPOSE" up -d --no-build "$SERVICE"
 ```
 
-Die Release-Compose-Datei verweist auf `railsimulatornet/schulmanager-homework-watcher:3.0.1`. Bis dieses Image tatsächlich veröffentlicht ist, ist dieses ZIP als Quellpaket zu behandeln. Der Container läuft mit UID 1001/GID 10, ohne zusätzliche Fähigkeiten, ohne Rechteausweitung und mit schreibgeschütztem Root-Dateisystem. Nur `data/` und das temporäre Verzeichnis sind beschreibbar. Beim Wechsel von einem älteren root-basierten Image müssen die vorhandenen Daten für UID 1001/GID 10 schreibbar sein. Die Gruppenzuordnung und Datenrechte auf dem eigenen Host vor dem Update prüfen.
+Die Beispiel-Compose-Datei verwendet den gepflegten Kanal `railsimulatornet/schulmanager-homework-watcher:latest`. Vor einer Übernahme muss dessen tatsächliche Veröffentlichung erfolgreich abgeschlossen sein. Der Container läuft mit UID 1001/GID 10, ohne zusätzliche Fähigkeiten, ohne Rechteausweitung und mit schreibgeschütztem Root-Dateisystem. Nur `data/` und das temporäre Verzeichnis sind beschreibbar. Beim Wechsel von einem älteren root-basierten Image müssen die vorhandenen Daten für UID 1001/GID 10 schreibbar sein. Die Gruppenzuordnung und Datenrechte auf dem eigenen Host vor dem Update prüfen.
 
 ### Bedienung
 
@@ -110,7 +119,7 @@ Das Produktionsimage enthält bewusst kein npm; deshalb innerhalb des Containers
 
 ## Tests und Sicherheit
 
-`npm ci --ignore-scripts && npm test` prüft die Module mit anonymisierten Strukturen sowie Diff, leere Antworten, Teilfehler, Loginpause, Laufsperre, HTML/CSV und Postausgang. Die Laufzeitprüfung verlangt Node.js **24.22.1 oder neuer innerhalb Node 24** und prüft den Chromium-Start auf nativen AMD64- und ARM64-Runnern. Beide prüfen dasselbe OCI-Archiv. Die nicht benötigten GStreamer-Pakete zu CVE-2025-3887 werden entfernt und auf Abwesenheit geprüft. Trivy blockiert behebbare HIGH-/CRITICAL-Funde; CodeQL prüft JavaScript und Actions. Die Linux-CI prüft die prozessübergreifende Sperre.
+`npm ci --ignore-scripts && npm test` prüft die Module mit anonymisierten Strukturen sowie Diff, leere Antworten, Teilfehler, Loginpause, Laufsperre, HTML/CSV und Postausgang. Playwright-Paket und Browser-Image werden gemeinsam aktualisiert; ihre Versionsgleichheit ist durch einen Test abgesichert. Playwright 1.65.1 nutzt die unterstützte Node-26-LTS-Laufzeit. Die Laufzeitprüfung verlangt Node.js **26.13.1 oder neuer innerhalb Node 26** und prüft den Chromium-Start auf nativen AMD64- und ARM64-Runnern. Beide prüfen dasselbe OCI-Archiv. Die nicht benötigten GStreamer-Pakete zu CVE-2025-3887 werden entfernt und auf Abwesenheit geprüft. Trivy blockiert behebbare HIGH-/CRITICAL-Funde; CodeQL prüft JavaScript und Actions. Die Linux-CI prüft die prozessübergreifende Sperre.
 
 Die Mailvorlagen haben Textversionen, eingebettete einfache CSS-Regeln und feste Outlook-Hüllen. Die endgültige Darstellung im tatsächlich eingesetzten Mailprogramm muss am empfangenen Beispiel beurteilt werden.
 
@@ -163,9 +172,9 @@ If SMTP fails, the prepared change email remains in the outbox. A disconnect aft
 
 ### Existing UGOS projects and commands
 
-Before **every** build or deployment of an existing UGOS Compose project, read the real project and service from the container labels `com.docker.compose.project` and `com.docker.compose.service`. Never infer the project name from the directory. Always run Compose with `-p "$PROJECT" -f "$COMPOSE"`. After backing up `.env` and `data/` and confirming publication, set the existing service's image tag to `3.0.1`, then run `pull "$SERVICE"` and `up -d --no-build "$SERVICE"` with those project/file options. Do not replace existing service names or data paths with example values. Recreating the container is required for updated `.env` values to take effect.
+Before **every** build or deployment of an existing UGOS Compose project, read the real project and service from the container labels `com.docker.compose.project` and `com.docker.compose.service`. Never infer the project name from the directory. Always run Compose with `-p "$PROJECT" -f "$COMPOSE"`. After backing up `.env` and `data/` and confirming publication, set the existing service's image tag to the verified `latest` channel, then run `pull "$SERVICE"` and `up -d --no-build "$SERVICE"` with those project/file options. Do not replace existing service names or data paths with example values. Recreating the container is required for updated `.env` values to take effect.
 
-The release Compose file names `railsimulatornet/schulmanager-homework-watcher:3.0.1`. Until that image is published, use this ZIP as a source package. The container runs as UID 1001/GID 10 with a read-only root filesystem, all capabilities dropped, and no privilege escalation. Only `data/` and `/tmp` are writable. When upgrading from an older root-based image, existing data must be writable by UID 1001/GID 10; check group mapping and data permissions before updating.
+The example Compose file uses `railsimulatornet/schulmanager-homework-watcher:latest`. Confirm that its actual publication and verification have completed before deployment. The container runs as UID 1001/GID 10 with a read-only root filesystem, all capabilities dropped, and no privilege escalation. Only `data/` and `/tmp` are writable. When upgrading from an older root-based image, existing data must be writable by UID 1001/GID 10; check group mapping and data permissions before updating.
 
 ```bash
 docker exec schulmanager-homework-watcher node src/run-once.js
@@ -174,10 +183,10 @@ docker exec schulmanager-homework-watcher node src/login.js
 docker logs --tail 50 schulmanager-homework-watcher
 ```
 
-The browser login helper is optional for regular API fetching. npm is deliberately removed from the production image, so container commands use `node`. Credentials are used only for login and SMTP; do not log raw login responses. Before a later production update, back up private `.env` and `data/`, wait for actual publication and both architecture checks, then use the versioned image tag while retaining the existing data paths.
+The browser login helper is optional for regular API fetching. npm is deliberately removed from the production image, so container commands use `node`. Credentials are used only for login and SMTP; do not log raw login responses. Before a later production update, back up private `.env` and `data/`, wait for actual publication and both architecture checks, then use the verified maintained image channel while retaining the existing data paths.
 
 ### Tests and security
 
-`npm ci --ignore-scripts && npm test` covers anonymized module fixtures, diffs, empty responses, partial errors, login pauses, mail rendering, outbox, and the timetable collision. Linux CI also tests the cross-process lock. Release workflows build one OCI archive for AMD64 and ARM64, run on native runners, require Node.js 24.22.1 or later **within Node 24**, test Chromium startup, and check that the unused GStreamer packages affected by CVE-2025-3887 are absent. Trivy blocks fixable HIGH/CRITICAL findings; CodeQL analyzes JavaScript and Actions. Publication requires both architecture checks.
+`npm ci --ignore-scripts && npm test` covers anonymized module fixtures, diffs, empty responses, partial errors, login pauses, mail rendering, outbox, and the timetable collision. A test requires the Playwright package and browser image to use the same version, so they must be updated together. Playwright 1.65.1 uses the supported Node 26 LTS runtime. Linux CI also tests the cross-process lock. Release workflows build one OCI archive for AMD64 and ARM64, run on native runners, require Node.js 26.13.1 or later **within Node 26**, test Chromium startup, and check that the unused GStreamer packages affected by CVE-2025-3887 are absent. Trivy blocks fixable HIGH/CRITICAL findings; CodeQL analyzes JavaScript and Actions. Publication requires both architecture checks.
 
 The complete configuration template is [.env.example](.env.example). License: [MIT](LICENSE).

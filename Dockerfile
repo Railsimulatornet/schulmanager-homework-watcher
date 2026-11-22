@@ -1,8 +1,8 @@
-FROM mcr.microsoft.com/playwright:v1.62.1-noble
+FROM mcr.microsoft.com/playwright:v1.65.1-noble
 
 WORKDIR /app
 
-LABEL org.opencontainers.image.version="3.0.1"
+LABEL org.opencontainers.image.version="3.0.2"
 
 ENV NODE_ENV=production \
     PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD=1
@@ -31,5 +31,8 @@ RUN mkdir -p /app/data/profile /app/data/snapshots /app/data/reports /app/data/s
 
 ENV HOME=/home/pwuser
 USER 1001:10
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD ["node", "/app/src/healthcheck.js"]
 
 CMD ["node", "src/scheduler.js"]

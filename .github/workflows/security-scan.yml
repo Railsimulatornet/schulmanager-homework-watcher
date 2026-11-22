@@ -5,12 +5,21 @@ on:
     branches: [main]
   pull_request:
   schedule:
-    - cron: '30 3 * * 1'
+    - cron: '41 3 * * 6'
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "Geprüftes Image als latest veröffentlichen"
+        type: boolean
+        default: false
 
 permissions:
   contents: read
   security-events: write
+
+concurrency:
+  group: schulmanager-container-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   build:
@@ -122,7 +131,11 @@ jobs:
 
   publish:
     needs: [build, trivy]
-    if: github.event_name == 'schedule'
+    if: >-
+      github.repository == 'Railsimulatornet/schulmanager-homework-watcher' &&
+      github.ref == 'refs/heads/main' &&
+      (github.event_name == 'push' || github.event_name == 'schedule' ||
+       (github.event_name == 'workflow_dispatch' && inputs.publish))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
