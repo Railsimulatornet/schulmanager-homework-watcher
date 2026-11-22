@@ -85,7 +85,7 @@ if a[0] == 'exec':
     if mode == 'scheduler-probe-failure': sys.exit(9)
     if mode == 'scheduler-state-ignored': sys.exit(0)
     sys.exit(1 if removed.exists() else 0)
-if a[0] in ('rm', 'logs'):
+if a[0] in ('rm', 'logs', 'kill'):
     log()
     sys.exit(0)
 if a[0] == 'run' and '--entrypoint' in a:

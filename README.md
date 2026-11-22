@@ -119,7 +119,7 @@ Das Produktionsimage enthält bewusst kein npm; deshalb innerhalb des Containers
 
 ## Tests und Sicherheit
 
-`npm ci --ignore-scripts && npm test` prüft die Module mit anonymisierten Strukturen sowie Diff, leere Antworten, Teilfehler, Loginpause, Laufsperre, HTML/CSV und Postausgang. Die Laufzeitprüfung verlangt Node.js **24.22.1 oder neuer innerhalb Node 24** und prüft den Chromium-Start auf nativen AMD64- und ARM64-Runnern. Beide prüfen dasselbe OCI-Archiv. Die nicht benötigten GStreamer-Pakete zu CVE-2025-3887 werden entfernt und auf Abwesenheit geprüft. Trivy blockiert behebbare HIGH-/CRITICAL-Funde; CodeQL prüft JavaScript und Actions. Die Linux-CI prüft die prozessübergreifende Sperre.
+`npm ci --ignore-scripts && npm test` prüft die Module mit anonymisierten Strukturen sowie Diff, leere Antworten, Teilfehler, Loginpause, Laufsperre, HTML/CSV und Postausgang. Playwright-Paket und Browser-Image werden gemeinsam aktualisiert; ihre Versionsgleichheit ist durch einen Test abgesichert. Playwright 1.65.1 nutzt die unterstützte Node-26-LTS-Laufzeit. Die Laufzeitprüfung verlangt Node.js **26.13.1 oder neuer innerhalb Node 26** und prüft den Chromium-Start auf nativen AMD64- und ARM64-Runnern. Beide prüfen dasselbe OCI-Archiv. Die nicht benötigten GStreamer-Pakete zu CVE-2025-3887 werden entfernt und auf Abwesenheit geprüft. Trivy blockiert behebbare HIGH-/CRITICAL-Funde; CodeQL prüft JavaScript und Actions. Die Linux-CI prüft die prozessübergreifende Sperre.
 
 Die Mailvorlagen haben Textversionen, eingebettete einfache CSS-Regeln und feste Outlook-Hüllen. Die endgültige Darstellung im tatsächlich eingesetzten Mailprogramm muss am empfangenen Beispiel beurteilt werden.
 
@@ -187,6 +187,6 @@ The browser login helper is optional for regular API fetching. npm is deliberate
 
 ### Tests and security
 
-`npm ci --ignore-scripts && npm test` covers anonymized module fixtures, diffs, empty responses, partial errors, login pauses, mail rendering, outbox, and the timetable collision. Linux CI also tests the cross-process lock. Release workflows build one OCI archive for AMD64 and ARM64, run on native runners, require Node.js 24.22.1 or later **within Node 24**, test Chromium startup, and check that the unused GStreamer packages affected by CVE-2025-3887 are absent. Trivy blocks fixable HIGH/CRITICAL findings; CodeQL analyzes JavaScript and Actions. Publication requires both architecture checks.
+`npm ci --ignore-scripts && npm test` covers anonymized module fixtures, diffs, empty responses, partial errors, login pauses, mail rendering, outbox, and the timetable collision. A test requires the Playwright package and browser image to use the same version, so they must be updated together. Playwright 1.65.1 uses the supported Node 26 LTS runtime. Linux CI also tests the cross-process lock. Release workflows build one OCI archive for AMD64 and ARM64, run on native runners, require Node.js 26.13.1 or later **within Node 26**, test Chromium startup, and check that the unused GStreamer packages affected by CVE-2025-3887 are absent. Trivy blocks fixable HIGH/CRITICAL findings; CodeQL analyzes JavaScript and Actions. Publication requires both architecture checks.
 
 The complete configuration template is [.env.example](.env.example). License: [MIT](LICENSE).

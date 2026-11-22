@@ -15,15 +15,16 @@ class RuntimePolicyTests(unittest.TestCase):
             capture_output=True, text=True, timeout=10)
 
     def test_vulnerable_or_unreviewed_node_versions_are_rejected(self):
-        for version in ('24.19.0', '24.21.99', '24.22.0', '22.23.4', '25.0.0',
-                        '26.12.1', '24.22.1-rc.1', '24.22', 'v24.22.1', ''):
+        for version in ('24.22.3', '22.23.5', '25.0.0', '26.0.0', '26.12.99',
+                        '26.13.0', '27.0.0', '28.13.1', '26.13.1-rc.1',
+                        '26.13', 'v26.13.1', '026.13.1', ''):
             with self.subTest(version=version):
                 result = self.run_assertion('assertSupportedNode', version)
                 self.assertNotEqual(result.returncode, 0)
-                self.assertIn('Node.js 24.22.1 or newer within Node 24 is required', result.stderr)
+                self.assertIn('Node.js 26.13.1 or newer within Node 26 is required', result.stderr)
 
-    def test_fixed_and_newer_stable_node_24_versions_are_accepted(self):
-        for version in ('24.22.1', '24.22.2', '24.23.0', '24.100.0'):
+    def test_fixed_and_newer_stable_node_26_versions_are_accepted(self):
+        for version in ('26.13.1', '26.13.2', '26.14.0', '26.100.0'):
             with self.subTest(version=version):
                 result = self.run_assertion('assertSupportedNode', version)
                 self.assertEqual(result.returncode, 0, result.stderr)
