@@ -53,6 +53,7 @@ docker run --rm --network none --platform "$platform" \
 docker run --rm --network none --platform "$platform" \
   --mount "type=bind,src=$scripts/dependency-smoke-test.js,dst=/app/.dependency-smoke-test.js,readonly" \
   --entrypoint node "$image_id" /app/.dependency-smoke-test.js
+bash "$scripts/verify-scheduler.sh" "$image_id"
 docker image rm "$runtime" >/dev/null
 printf 'Verified %s: %s\n' "$platform" "$image_id"
 
