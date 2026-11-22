@@ -22,6 +22,9 @@ done
 [[ "$healthy" == true ]] || { docker logs "$container"; exit 1; }
 docker exec "$container" node /app/src/healthcheck.js
 # The check must reject a missing application heartbeat instead of accepting PID 1.
+# Freeze only this disposable scheduler so its 15-second timer cannot recreate
+# the file between the two exec calls. The EXIT trap removes the stopped process.
+docker kill --signal STOP "$container" >/dev/null
 docker exec "$container" node -e 'require("fs").unlinkSync("/tmp/schulmanager-scheduler-health.json")'
 if docker exec "$container" node /app/src/healthcheck.js; then
   echo 'Missing scheduler state was incorrectly accepted.' >&2
