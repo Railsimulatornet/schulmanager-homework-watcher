@@ -36,7 +36,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [javascript-typescript, actions]
+        language: [javascript-typescript, actions, python]
     steps:
       - name: Verify requested source commit
         if: github.event_name == 'workflow_dispatch'
