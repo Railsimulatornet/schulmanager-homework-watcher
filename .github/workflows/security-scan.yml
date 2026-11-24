@@ -24,10 +24,18 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    outputs:
+      publish: ${{ steps.publication.outputs.publish }}
     steps:
       - uses: actions/checkout@v7
         with:
           persist-credentials: false
+          ref: ${{ github.sha }}
+          fetch-depth: 0
+
+      - name: Determine publication scope
+        id: publication
+        run: python3 .github/scripts/publication_scope.py
 
       - name: Prepare disk space for multi-arch build
         run: bash .github/scripts/prepare-runner.sh
@@ -132,6 +140,7 @@ jobs:
   publish:
     needs: [build, trivy]
     if: >-
+      needs.build.outputs.publish == 'true' &&
       github.repository == 'Railsimulatornet/schulmanager-homework-watcher' &&
       github.ref == 'refs/heads/main' &&
       (github.event_name == 'push' || github.event_name == 'schedule' ||
