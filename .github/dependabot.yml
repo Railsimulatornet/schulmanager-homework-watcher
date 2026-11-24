@@ -12,8 +12,14 @@ updates:
       npm-minor:
         update-types:
           - minor
+    # Playwright und Browser-Image müssen gemeinsam aktualisiert werden.
+    # Nur Versionsupdates ausnehmen; Sicherheitsupdates bleiben aktiv.
     ignore:
       - dependency-name: playwright
+        update-types:
+          - version-update:semver-major
+          - version-update:semver-minor
+          - version-update:semver-patch
 
   - package-ecosystem: github-actions
     directory: "/"
